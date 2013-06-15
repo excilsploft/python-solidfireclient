@@ -14,10 +14,12 @@ import argparse
 import httplib2
 import logging
 import sys
-
+import solidfireclient as sfclient
 from solidfireclient import exceptions as exc
-from solidfireclient.v1 import shell as shell_v1
 from solidfireclient import utils
+from solidfireclient import volumes
+
+from solidfireclient.v1 import shell as shell_v1
 
 logger = logging.getLogger(__name__)
 
