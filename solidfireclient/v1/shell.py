@@ -32,9 +32,9 @@ def _translate_volume_results(collection, convert):
            help='Filter results by status')
 def do_list(args):
     """List volumes on a cluster."""
-    import pdb;pdb.set_trace()
     search_opts = {}
-    volumes = v1.volumes.list(search_opts=search_opts)
+    import pdb;pdb.set_trace()
+    volumes = v1.Volumes.list(search_opts=search_opts)
     _translate_volume_results(volumes)
     utils.print_list(volumes, ['SF-ID', 'Name', 'Status', 'Account-ID'])
 
