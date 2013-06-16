@@ -1,0 +1,7 @@
+*.pyc
+*.swp
+*~
+build
+dist
+solidfireclient/versioninfo
+python_solidfireclient.egg-info
