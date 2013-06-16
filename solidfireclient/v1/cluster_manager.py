@@ -12,7 +12,7 @@ import string
 import time
 import uuid
 
-import solidfire_exceptions as sf_exceptions
+from solidfireclient import exceptions
 
 
 class ClusterManager:
@@ -55,7 +55,7 @@ class ClusterManager:
             self.rep_count = kwargs['rep_count']
         if 'drv_ready_timer' in kwargs:
             logging.info('Setting DRV_READY_TIMER to:%s'
-                    % kwargs['drv_ready_timer'])
+                         % kwargs['drv_ready_timer'])
             self.drv_ready_timer = kwargs['drv_ready_timer']
 
     def create_cluster(self, mvip,
@@ -123,7 +123,7 @@ class ClusterManager:
                             'please be patient...')
         connection = httplib.HTTPSConnection(host, self.port)
         logging.debug('Issuing call with payload and header: %s\n%s'
-                % (payload, header))
+                      % (payload, header))
         try:
             connection.request('POST', '/json-rpc/1.0', payload, header)
             response = connection.getresponse()
@@ -142,21 +142,21 @@ class ClusterManager:
             data = json.loads(data)
             if 'error' in data:
                 if 'MaxSnapshotsPerVolumeExceeded' in data['error']['name']:
-                    raise sf_exceptions.MaxSimultaneousClonesPerVolume(
+                    raise exceptions.MaxSimultaneousClonesPerVolume(
                         'max clones/snapshots per volume encountered',
                         data)
                 elif 'MaxSnapshotsPerNodeExceeded' in data['error']['name']:
-                    raise sf_exceptions.MaxSimultaneousClonesPerNode(
+                    raise exceptions.MaxSimultaneousClonesPerNode(
                         'max clones/snapshots per node encountered',
                         data)
                 else:
                     logging.error('Error Response from API call:%s' % data)
-                    raise sf_exceptions.APICommandException('Error detected in'
-                        ' API response', data)
+                    raise exceptions.APICommandException('Error detected in '
+                                                         'API response', data)
 
         elif response.status == 401:  # Authenication failed
             connection.close()
-            raise sf_exceptions.ExceptionAuthenticationException(
+            raise exceptions.ExceptionAuthenticationException(
                 'Authentication error', data)
         else:  # some other error
             connection.close()
@@ -195,7 +195,8 @@ class ClusterManager:
         while wait_for_pending_nodes:
             result = self.issue_api_request('ListActiveNodes', {})
             if 'nodes' not in result:
-                raise Exception('Error from ListActiveNodes:%s' % result)
+                raise exceptions.Exception('Error from ListActiveNodes:%s'
+                                           % result)
             if len(result['nodes']) == len(self.node_list):
                 wait_for_pending_nodes = False
             else:
@@ -222,7 +223,7 @@ class ClusterManager:
             time.sleep(1)
             result = self.issue_api_request('ListDrives', {})
             if 'drives' not in result:
-                raise Exception('Error from ListDrives:%s' % result)
+                raise exceptions.Exception('Error from ListDrives:%s' % result)
 
             if len(result['drives']) >= len(self.node_list):
                 for d in result['drives']:
@@ -231,7 +232,7 @@ class ClusterManager:
             else:
                 logging.info('Waiting for drive ready detection on all nodes')
                 logging.info('\tWill wait for another %s seconds'
-                        % self.drv_ready_timer)
+                             % self.drv_ready_timer)
             self.drv_ready_timer -= 1
 
         return sorted(drive_list, key=lambda k: k['driveID'])
@@ -245,7 +246,7 @@ class ClusterManager:
                   'limit': 1000}
         result = self.issue_api_request('ListAccounts', params)
         if 'accounts' not in result:
-            raise Exception('Error from ListAccounts:%s' % result)
+            raise exceptions.Exception('Error from ListAccounts:%s' % result)
 
         for a in result['accounts']:
             logging.debug('Append account object: %s' % a)
@@ -265,7 +266,7 @@ class ClusterManager:
         finally:
             if result is not None and 'account' in result:
                 logging.debug('get_account_by_name returning: %s'
-                        % result['account'])
+                              % result['account'])
                 return result['account']
             else:
                 logging.debug('get_account_by_name returning: None')
@@ -280,11 +281,11 @@ class ClusterManager:
         result = self.issue_api_request('GetAccountByID', params)
         if 'account' in result:
             logging.debug('get_account_by_id returning: %s'
-                    % result['account'])
+                          % result['account'])
             return result['account']
         else:
             logging.debug('get_account_by_id returning: %s'
-                    % result['account'])
+                          % result['account'])
             return None
 
     def add_account(self, name, chap_secrets=None, attributes={}):
@@ -300,7 +301,7 @@ class ClusterManager:
 
         result = self.issue_api_request('AddAccount', params)
         if 'accountID' not in result:
-            raise Exception('Failed AddAccount:%s' % result)
+            raise exceptions.Exception('Failed AddAccount:%s' % result)
         return self.get_account_by_id(result['accountID'])
 
     def get_volume_list(self):
@@ -312,7 +313,7 @@ class ClusterManager:
                   'limit': 1000}
         result = self.issue_api_request('ListActiveVolumes', params)
         if 'volumes' not in result:
-            raise Exception('Failed ListActiveVolumes:%s' % result)
+            raise exceptions.Exception('Failed ListActiveVolumes:%s' % result)
 
         for v in result['volumes']:
             logging.debug('Append volume object: %s' % v)
@@ -379,7 +380,7 @@ class ClusterManager:
 
         result = self.issue_api_request('CreateVolume', params)
         if 'volumeID' not in result:
-            raise Exception('Failed CreateVolume:%s' % result)
+            raise exceptions.Exception('Failed CreateVolume:%s' % result)
 
         vlist = self.get_volume_list_by_accountID(accountID)
         vol = None
