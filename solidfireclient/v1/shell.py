@@ -5,7 +5,7 @@ import time
 
 from solidfireclient import exceptions
 from solidfireclient import utils
-from solidfireclient import v1
+#from solidfireclient.v1 import volume
 
 
 def _translate_volume_results(collection, convert):
@@ -34,7 +34,4 @@ def do_list(args):
     """List volumes on a cluster."""
     search_opts = {}
     import pdb;pdb.set_trace()
-    volumes = v1.Volumes.list(search_opts=search_opts)
-    _translate_volume_results(volumes)
-    utils.print_list(volumes, ['SF-ID', 'Name', 'Status', 'Account-ID'])
 

@@ -1,5 +1,5 @@
 
-class Client():
+class Client(object):
     """Client for the SolidFire v1 API.
 
     :param string endpoint: A user-supplied endpoint URL for the heat

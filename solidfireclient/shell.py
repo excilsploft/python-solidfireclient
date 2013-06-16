@@ -14,13 +14,13 @@ import argparse
 import httplib2
 import logging
 import sys
-import solidfireclient as sfclient
+from solidfireclient import client as solidfireclient
 from solidfireclient import exceptions as exc
 from solidfireclient import utils
 
-from solidfireclient.v1 import shell as shell_v1
 
 logger = logging.getLogger(__name__)
+
 
 class SolidFireShell(object):
 
@@ -86,32 +86,28 @@ class SolidFireShell(object):
 
         parser.add_argument('--solidfire-api-version',
                             metavar='<client-api-version-to-use>',
-                            default='v1',
-                            help='Defaults to v1')
+                            default='1',
+                            help='Defaults to 1')
         parser.add_argument('--sf_api_version',
                             help=argparse.SUPPRESS)
 
         return parser
 
-    def get_subcommand_parser(self, version):
+    def get_subcommand_parser(self):
         parser = self.get_base_parser()
 
         self.subcommands = {}
         subparsers = parser.add_subparsers(metavar='<subcommand>')
-
-        try:
-            actions_module = {'1': shell_v1}[version]
-        except KeyError:
-            actions_module = shell_v1
-
-        self._find_actions(subparsers, actions_module)
+        submodule = utils.import_versioned_module('1', 'shell')
+        self._find_actions(subparsers, submodule)
         self._find_actions(subparsers, self)
+
 
         return parser
 
     def _find_actions(self, subparsers, actions_module):
         for attr in (a for a in dir(actions_module) if a.startswith('do_')):
-            # hyphen separated instead of underscores.
+            # I prefer to be hypen-separated instead of underscores.
             command = attr[3:].replace('_', '-')
             callback = getattr(actions_module, attr)
             desc = callback.__doc__ or ''
@@ -139,14 +135,12 @@ class SolidFireShell(object):
             httplib2.debuglevel = 1
 
     def main(self, argv):
-        # First find version
         parser = self.get_base_parser()
         (options, args) = parser.parse_known_args(argv)
         self._set_debug(options.debug)
 
-        # build subcommands based on version
         api_version = options.solidfire_api_version
-        subcommand_parser = self.get_subcommand_parser(api_version)
+        subcommand_parser = self.get_subcommand_parser()
         self.parser = subcommand_parser
 
         # check top-level help
@@ -193,6 +187,7 @@ class SolidFireShell(object):
                                        args.command)
         else:
             self.parser.print_help()
+
 
 class HelpFormatter(argparse.HelpFormatter):
     def start_section(self, heading):

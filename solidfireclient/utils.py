@@ -57,7 +57,6 @@ def print_dict(d, property="Property"):
     [pt.add_row(list(r)) for r in six.iteritems(d)]
     print(strutils.safe_encode(pt.get_string(sortby=property)))
 
-
 def import_class(import_str):
     """Returns a class from a string including module and class."""
     mod_str, _sep, class_str = import_str.rpartition('.')
@@ -83,3 +82,11 @@ def slugify(value):
     value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore')
     value = unicode(_slugify_strip_re.sub('', value).strip().lower())
     return _slugify_hyphenate_re.sub('-', value)
+
+def import_versioned_module(version, submodule=None):
+    module = 'solidfireclient.v%s' % version
+    if submodule:
+        module = '.'.join((module, submodule))
+
+    __import__(module)
+    return sys.modules[module]
