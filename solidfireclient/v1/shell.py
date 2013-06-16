@@ -5,6 +5,7 @@ import time
 
 from solidfireclient import exceptions
 from solidfireclient import utils
+from solidfireclient.v1.volumes import VolumeManager as volumes
 #from solidfireclient.v1 import volume
 
 
@@ -35,3 +36,38 @@ def do_list(args):
     search_opts = {}
     import pdb;pdb.set_trace()
 
+@utils.arg('size',
+           metavar='<volume-size>',
+           default=None,
+           help='Size of volume in Gigabytes to create.')
+@utils.arg('--name',
+           metavar='<volume-name>',
+           help='Desired name for new volume.',
+           default=None)
+@utils.arg('--count',
+           metavar='<volume-count>',
+           help='Number of volumes to create.',
+           default=1)
+@utils.arg('--account-id',
+           metavar='<account-id>',
+           help='Account to assign ownership of the new volume.',
+           default=None)
+@utils.arg('--account-name',
+           metavar='<account-name>',
+           help='Name of account (if None or DNE one will be created).',
+           default=None)
+@utils.arg('--attributes',
+           metavar='<volume-attributes>',
+           help='Attributes to assign to volume.',
+           default=None)
+@utils.arg('--chap-secrets',
+           metavar='<chap-secrets>',
+           help='Chap secrets to assign to volume '
+                '(if omitted randomly generated secrets will be used).',
+           default=None)
+@utils.arg('--emulation',
+           metavar='<512-emulation>',
+           help='Utilize 512 byte emulation.',
+           default=False)
+def do_create(args):
+    volumes.create(args.sf_mvip, args.sf_login, args.sf_password, args.size, args.name, args)
