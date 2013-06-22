@@ -155,8 +155,7 @@ class SolidFireShell(object):
         if args.func == self.do_help:
             self.do_help(args)
             return 0
-        args.func(args)
-        cluster_url = args.sf_mvip
+
         if not args.sf_login:
             raise exc.CommandError("You must provide a username via"
                                    " either --sf-login or env[SF_LOGIN]")
@@ -172,6 +171,10 @@ class SolidFireShell(object):
             'admin': args.sf_cluster_admin,
             'admin_password': args.sf_admin_password,
         }
+
+        client = solidfireclient.Client('1', args.mvip, **kwargs)
+        args.func(client, args)
+        cluster_url = args.sf_mvip
 
     @utils.arg('command', metavar='<subcommand>', nargs='?',
                help='Display help for <subcommand>')
