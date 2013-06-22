@@ -7,7 +7,6 @@ from solidfireclient.v1.cluster_manager import ClusterManager
 
 
 class VolumeManager():
-    @staticmethod
     def create(self, mvip, login, password, size, name, **kwargs):
 
         count = kwargs.get('count', 1)
@@ -17,7 +16,6 @@ class VolumeManager():
         attributes = kwargs.get('attributes', {})
         chap_secrets = kwargs.get('chap_secrets', None)
         emulation = kwargs.get('emulation', False)
-        import pdb;pdb.set_trace()
         cluster_client = ClusterManager(mvip, login, password)
         if account_id is None:
             account = cluster_client.get_account_by_name(account_name)

@@ -6,7 +6,6 @@ import time
 from solidfireclient import exceptions
 from solidfireclient import utils
 from solidfireclient.v1.volumes import VolumeManager as volumes
-#from solidfireclient.v1 import volume
 
 
 def _translate_volume_results(collection, convert):
@@ -31,6 +30,10 @@ def _translate_volume_results(collection, convert):
            metavar='<status>',
            default=None,
            help='Filter results by status')
+@utils.arg('--account-name',
+           metavar='<account-name>',
+           default=None,
+           help='Filter results by account-name')
 def do_list(args):
     """List volumes on a cluster."""
     search_opts = {}
@@ -70,4 +73,4 @@ def do_list(args):
            help='Utilize 512 byte emulation.',
            default=False)
 def do_create(args):
-    volumes.create(args.sf_mvip, args.sf_login, args.sf_password, args.size, args.name, args)
+    volumes().create(args.sf_mvip, args.sf_login, args.sf_password, args.size, args.name)
