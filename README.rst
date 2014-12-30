@@ -1,12 +1,22 @@
 Python SDK and CLI for SolidFire Storage Clusters
 =================================================
 
-This  available by runnin o available by runnin git a client for the SolidFire Cluster API.  It
-includes both a command-line program as well as python
-libraries that can be imported and used.
+This is a Command-Line Client and Python Library for the SolidFire API.  The
+Client Utility is intended to provide a quick and easy Command Line interface
+to interact with the SolidFire API and is made of up wrapper/helper methods
+to enable a user to do a number of things more easily with their Cluster.
 
-Note that this work is modelled off of the OpenStack
-API Clients.
+The Python Libraries implement the same methods that are used by the Client,
+however in addition they also provide the ability to simply call the SolidFire API
+method directly.  In most cases each will simply take a dictionary which is the API
+parameters.  This should follow the Element API Reference Guide, and simply 
+provide some wrappers around the calls to make automation easier.
+
+Check out the specific sections and examples below. 
+
+NOTE:
+This is very much a work in progress, started over a year ago and just decided to try it out on a VERY cold
+and snowy day after Christmas.
 
 Installation
 -------------
