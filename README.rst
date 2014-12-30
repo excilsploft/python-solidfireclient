@@ -15,7 +15,7 @@ provide some wrappers around the calls to make automation easier.
 Check out the specific sections and examples below. 
 
 NOTE:
-This is very much a work in progress, started over a year ago and just decided to try it out on a VERY cold
+This is very much a work in progress, the idea started over a year ago and just finally decided to try it out on a VERY cold
 and snowy day after Christmas.
 
 Installation
