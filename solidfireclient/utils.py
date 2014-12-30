@@ -62,6 +62,30 @@ def print_dict(d, property="Property"):
     [pt.add_row(list(r)) for r in six.iteritems(d)]
     print(strutils.safe_encode(pt.get_string(sortby=property)))
 
+def print_list(objs, fields, formatters={}, order_by=None):
+    mixed_case_fields = ['serverId']
+    pt = prettytable.PrettyTable([f for f in fields], caching=False)
+    pt.aligns = ['l' for f in fields]
+
+    for o in objs:
+        row = []
+        for field in fields:
+            if field in formatters:
+                row.append(formatters[field](o))
+            else:
+                if field in mixed_case_fields:
+                    field_name = field.replace(' ', '_')
+                else:
+                    field_name = field.lower().replace(' ', '_')
+                if type(o) == dict and field in o:
+                    data = o[field]
+                else:
+                    data = getattr(o, field_name, '')
+                row.append(data)
+        pt.add_row(row)
+
+    print(pt)
+
 def import_class(import_str):
     """Returns a class from a string including module and class."""
     mod_str, _sep, class_str = import_str.rpartition('.')

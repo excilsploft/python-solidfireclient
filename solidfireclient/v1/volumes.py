@@ -1,25 +1,114 @@
 from solidfireclient import sfapi
 
+
 class Volume(sfapi.API):
 
-    def list(self, search_opts=None):
-        pass
+    def list(self, account_id=None):
+        vlist = []
+        deleted_vols = []
+        active_vols = []
+
+        if account_id is None:
+            params = {}
+            response = self.issue_api_request('ListDeletedVolumes',
+                                              params,
+                                              version='1.0',
+                                              endpoint_dict=None)
+            deleted_vols = [v for v in response['result']['volumes']]
+
+            response = self.issue_api_request('ListActiveVolumes',
+                                              params,
+                                              version='1.0',
+                                              endpoint_dict=None)
+            active_vols = [v for v in response['result']['volumes']]
+            vlist = sorted((deleted_vols + active_vols),
+                           key=lambda k: k['volumeID'])
+        else:
+            params = {'accountID': account_id}
+            response = self.issue_api_request('ListVolumesForAccount',
+                                              params,
+                                              version='1.0',
+                                              endpoint_dict=None)
+            vlist = [v for v in response['result']['volumes']]
+            vlist = sorted(vlist, key=lambda k: k['volumeID'])
+        return vlist
 
     def show(self, id):
-        vol = {'access': 'readWrite',
-               'accountID': 1,
-               'attributes':{'foo': 'foo',
-                             'biz': 'biz'},
-               'qos':{'burstIOPS': 15000}}
         params = {}
         response = self.issue_api_request('ListActiveVolumes',
-                                           params,
-                                           version='1.0',
-                                           endpoint_dict=None)
-        vol = None
-        vol = [v for v in response['result']['volumes'] if v['volumeID'] == int(id)]
+                                          params,
+                                          version='1.0',
+                                          endpoint_dict=None)
+        vol = [v for v in response['result']['volumes']
+               if v['volumeID'] == int(id)]
         return vol[0]
 
+    def delete(self, id, purge):
+        params = {'volumeID': id}
+        response = self.issue_api_request('DeleteVolume',
+                                          params,
+                                          version='1.0',
+                                          endpoint_dict=None)
+        if purge:
+            response = self.issue_api_request('PurgeDeletedVolume',
+                                              params,
+                                              version='1.0',
+                                              endpoint_dict=None)
+
+
+    def delete_all(self, purge):
+        vlist = self.list()
+        for v in vlist:
+            params = {'volumeID': v['volumeID']}
+            response = self.issue_api_request('DeleteVolume',
+                                              params,
+                                              version='1.0',
+                                              endpoint_dict=None)
+        if purge:
+            for v in vlist:
+                params = {'volumeID': v['volumeID']}
+                response = self.issue_api_request('PurgeDeletedVolume',
+                                                  params,
+                                                  version='1.0',
+                                                  endpoint_dict=None)
+
+    def create(self, size, account_id, **kwargs):
+        volid_list = []
+        name = kwargs.get('name', None)
+        count = kwargs.get('count', 1)
+        attributes = kwargs.get('attributes', {})
+        chap_secrets = kwargs.get('chap_secrets', None)
+        enable512e = kwargs.get('emulation', False)
+        qos = kwargs.get('qos', {})
+        params = {'name': name,
+                  'accountID': account_id,
+                  'totalSize': int(size) * pow(10,9),
+                  'enable512e': enable512e,
+                  'attributes': attributes,
+                  'qos': qos}
+
+        if name:
+            params['name'] = name
+        if attributes:
+            params['attributes'] = attributes
+        if qos:
+            params['qos'] = qos
+        if chap_secrets:
+            params['chap_secrets'] = chap_secrets
+
+        for i in xrange(0, int(count)):
+            response = self.issue_api_request('CreateVolume',
+                                              params,
+                                              version='1.0',
+                                              endpoint_dict=None)
+            volid_list.append(response['result']['volumeID'])
+            if name is not None:
+                params['name'] = params['name'] + ('-%s' % i)
+
+        vlist = []
+        for id in volid_list:
+            vlist.append(self.show(id))
+        return vlist
 
     def AddInitiatorsToVolumeAccessGroup(volumeAccessGroupID, initiators):
         """
@@ -209,8 +298,17 @@ class Volume(sfapi.API):
 
     def ListActiveVolumes(startVolumeID=0, limit=0):
         """
-        Used to retrieve a list of active volumes on currently on the cluster.
+        Used to retrieve a list of active volumes currently on the cluster.
 
         """
         params = {'startVolumeID': startVolumeID,
                   'limit': limit}
+
+    def ListVolumesForAccount(self, account_id=None, filter=None):
+        if account_id is None:
+            account_id = self._get_account_by_name(self.username)
+        params = {'accountID': account_id}
+        response = self.issue_api_request('ListVolumesForAccount',
+                                          params,
+                                          version='1.0',
+                                          endpoint_dict=None)

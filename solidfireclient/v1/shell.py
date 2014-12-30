@@ -15,37 +15,55 @@ def _translate_volume_results(collection, convert):
             if from_key in keys and to_key not in keys:
                 setattr(item, to_key, item.__info[from_key])
 
-@utils.arg('--all',
-           metavar='<True|False>',
-           help='Optional flag to get all volumes '
-                'on a cluster regardless of account. '
-                'NOTE: Requires setting <sf_cluser_admin> '
-                'and <sf_admin_password>.',
-                default=False)
-@utils.arg('--name',
-           metavar='<name>',
+@utils.arg('--account',
+           metavar='<account>',
            default=None,
-           help='Filter results by name')
-@utils.arg('--status',
-           metavar='<status>',
-           default=None,
-           help='Filter results by status')
+           help='Filter results by account ID')
+@utils.arg('--keys',
+           metavar='<volumeID,status,totalSize,accountID,name...>',
+           default='volumeID,status,totalSize,accountID,name',
+           help='keys to display in resultant list, may be any valid SF '
+                'Volume Object Key.'
+                '  (--keys volumeID,status,accountID)\n')
 
-def do_volume_list(client, args):
+def do_volume_list(self, args):
     """List volumes on a cluster."""
-    search_opts = {
-        'all': args.all,
-        'name': args.name,
-        'status': args.status,
-        'account': args.account_name,
-    }
-    vols = volumes().list(search_opts=search_opts)
+    if args.account:
+        vols = self.volumes.list(account_id=args.account)
+    else:
+        vols = self.volumes.list()
+    key_list = args.keys.split(',')
+    utils.print_list(vols, key_list)
 
 @utils.arg('volume', metavar='<volume>', help='Volume ID.')
 def do_volume_show(self, args):
     """Shows volume details."""
     vol = self.volumes.show(args.volume)
     utils.print_dict(vol)
+
+@utils.arg('volume', metavar='<volume>', help='Volume ID.')
+@utils.arg('--purge',
+           dest='purge',
+           metavar='<0|1>',
+           nargs='?',
+           type=int,
+           const=1,
+           default=0,
+           help='Issue purge immediately after delete.')
+@utils.arg('--all',
+           dest='all',
+           metavar='<0|1>',
+           nargs='?',
+           type=int,
+           const=1,
+           default=0,
+           help='Deletes all volumes on the cluster *DANGER*.')
+def do_volume_delete(self, args):
+    #  If a Volume is specified we ignore the all option
+    if args.volume:
+        self.volumes.delete(args.volume, args.purge)
+    else:
+        self.volumes.delete_all(args.purge)
 
 @utils.arg('size',
            metavar='<volume-size>',
@@ -63,10 +81,6 @@ def do_volume_show(self, args):
            metavar='<account-id>',
            help='Account to assign ownership of the new volume.',
            default=None)
-@utils.arg('--account-name',
-           metavar='<account-name>',
-           help='Name of account (if None or DNE one will be created).',
-           default=None)
 @utils.arg('--attributes',
            metavar='<volume-attributes>',
            help='Attributes to assign to volume.',
@@ -80,5 +94,12 @@ def do_volume_show(self, args):
            metavar='<512-emulation>',
            help='Utilize 512 byte emulation.',
            default=False)
-def do_create(args):
-    volumes().create(args.sf_mvip, args.sf_login, args.sf_password, args.size, args.name)
+def do_volume_create(self, args):
+    options = {'name': args.name,
+               'count': args.count,
+               'attributes': args.attributes,
+               'chap_secrets': args.chap_secrets,
+               'emulation': args.emulation}
+    vlist = self.volumes.create(args.size, args.account_id, **options)
+    for v in vlist:
+        utils.print_dict(v)
