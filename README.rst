@@ -72,9 +72,9 @@ Help/Documentation for using the shell is also available by running
 
     See "solidfire help COMMAND" for help on a specific command.
 
-Example command to show details on a specified volume
-    ``solidfire volume-show 24596``::
+Example command to show details on a specified volume::
 
+    solidfire volume-show 24596
     +--------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
     |      Property      |                                                                                                                  Value                                                                                                                  |
     +--------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
