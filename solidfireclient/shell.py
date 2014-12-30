@@ -1,8 +1,17 @@
 #!/usr/bin/python
 
-# Copyright 2013 SolidFire Inc.
-# All Rights Reserved.
+# Copyright 2013 SolidFire Inc
+#    Licensed under the Apache License, Version 2.0 (the "License"); you may
+#    not use this file except in compliance with the License. You may obtain
+#    a copy of the License at
 #
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+#    License for the specific language governing permissions and limitations
+#    under the License.
 
 """
 Command-line interface to the SolidFire API.
@@ -14,9 +23,11 @@ import argparse
 import httplib2
 import logging
 import sys
-from solidfireclient import client as solidfireclient
+
+from solidfireclient import client
 from solidfireclient import exceptions as exc
 from solidfireclient import utils
+from solidfireclient.v1 import shell as shell_v1
 
 
 logger = logging.getLogger(__name__)
@@ -47,7 +58,8 @@ class SolidFireShell(object):
 
         parser.add_argument('--verbose',
                             default=False, action="store_true",
-                            help="Provides more verbose output")
+                            help="Provides more verbose output, "
+                                 "including json requests and responses")
 
         parser.add_argument('--sf-login',
                             metavar='<sf-login>',
@@ -74,6 +86,7 @@ class SolidFireShell(object):
                             metavar='<cluster-admin-account>',
                             default=utils.env('SF_CLUSTER_ADMIN'),
                             help='Defaults to env[SF_CLUSTER_ADMIN]')
+
         parser.add_argument('--sf_cluster_admin',
                             help=argparse.SUPPRESS)
 
@@ -81,6 +94,7 @@ class SolidFireShell(object):
                             metavar='<cluster-admin-password>',
                             default=utils.env('SF_ADMIN_PASSWORD'),
                             help='Defaults to env[SF_ADMIN_PASSWORD]')
+
         parser.add_argument('--sf_admin_password',
                             help=argparse.SUPPRESS)
 
@@ -88,6 +102,7 @@ class SolidFireShell(object):
                             metavar='<client-api-version-to-use>',
                             default='1',
                             help='Defaults to 1')
+
         parser.add_argument('--sf_api_version',
                             help=argparse.SUPPRESS)
 
@@ -98,8 +113,12 @@ class SolidFireShell(object):
 
         self.subcommands = {}
         subparsers = parser.add_subparsers(metavar='<subcommand>')
-        submodule = utils.import_versioned_module('1', 'shell')
-        self._find_actions(subparsers, submodule)
+
+        # NOTE(jdg):  When we add a v2 we'll do a simple
+        # dict of the versions and load here according to
+        # the requested version number, for now we only
+        # have a v1 so don't worry about it
+        self._find_actions(subparsers, shell_v1)
         self._find_actions(subparsers, self)
 
 
@@ -107,7 +126,7 @@ class SolidFireShell(object):
 
     def _find_actions(self, subparsers, actions_module):
         for attr in (a for a in dir(actions_module) if a.startswith('do_')):
-            # I prefer to be hypen-separated instead of underscores.
+            # Replace underscore delims with hyphens
             command = attr[3:].replace('_', '-')
             callback = getattr(actions_module, attr)
             desc = callback.__doc__ or ''
@@ -119,9 +138,11 @@ class SolidFireShell(object):
                                               description=desc,
                                               add_help=False,
                                               formatter_class=HelpFormatter)
+
             subparser.add_argument('-h', '--help',
                                    action='help',
                                    help=argparse.SUPPRESS, )
+
             self.subcommands[command] = subparser
             for (args, kwargs) in arguments:
                 subparser.add_argument(*args, **kwargs)
@@ -172,9 +193,9 @@ class SolidFireShell(object):
             'admin_password': args.sf_admin_password,
         }
 
-        client = solidfireclient.Client('1', args.mvip, **kwargs)
-        args.func(client, args)
-        cluster_url = args.sf_mvip
+        # FIXME(jdg) Hard coded for now, fix var later
+        self.sfcli = client.Client('admin', 'admin', '192.168.139.103', version=1)
+        args.func(self.sfcli, args)
 
     @utils.arg('command', metavar='<subcommand>', nargs='?',
                help='Display help for <subcommand>')

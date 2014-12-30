@@ -1,18 +1,27 @@
-# Copyright 2013 SolidFire Inc
+# Copyright (c) 2013 OpenStack Foundation
 # All Rights Reserved.
+#
+#    Licensed under the Apache License, Version 2.0 (the "License"); you may
+#    not use this file except in compliance with the License. You may obtain
+#    a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+#    License for the specific language governing permissions and limitations
+#    under the License.
 
 from __future__ import print_function
 
 import os
 import re
 import sys
-import uuid
 
 import six
 import strutils
 import prettytable
-
-from solidfireclient import exceptions
 
 
 def arg(*args, **kwargs):
@@ -47,10 +56,6 @@ def add_arg(f, *args, **kwargs):
         # to the options list positional options will appear to be backwards.
         f.arguments.insert(0, (args, kwargs))
 
-def pretty_choice_list(l):
-    return ', '.join("'%s'" % i for i in l)
-
-
 def print_dict(d, property="Property"):
     pt = prettytable.PrettyTable([property, 'Value'], caching=False)
     pt.aligns = ['l', 'l']
@@ -62,26 +67,6 @@ def import_class(import_str):
     mod_str, _sep, class_str = import_str.rpartition('.')
     __import__(mod_str)
     return getattr(sys.modules[mod_str], class_str)
-
-_slugify_strip_re = re.compile(r'[^\w\s-]')
-_slugify_hyphenate_re = re.compile(r'[-\s]+')
-
-
-# http://code.activestate.com/recipes/
-#   577257-slugify-make-a-string-usable-in-a-url-or-filename/
-def slugify(value):
-    """
-    Normalizes string, converts to lowercase, removes non-alpha characters,
-    and converts spaces to hyphens.
-
-    From Django's "django/template/defaultfilters.py".
-    """
-    import unicodedata
-    if not isinstance(value, unicode):
-        value = unicode(value)
-    value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore')
-    value = unicode(_slugify_strip_re.sub('', value).strip().lower())
-    return _slugify_hyphenate_re.sub('-', value)
 
 def import_versioned_module(version, submodule=None):
     module = 'solidfireclient.v%s' % version

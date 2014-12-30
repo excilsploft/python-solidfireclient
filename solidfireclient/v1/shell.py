@@ -5,7 +5,7 @@ import time
 
 from solidfireclient import exceptions
 from solidfireclient import utils
-from solidfireclient.v1.volumes import VolumeManager as volumes
+from solidfireclient.v1.volumes import Volume as volumes
 
 
 def _translate_volume_results(collection, convert):
@@ -30,14 +30,22 @@ def _translate_volume_results(collection, convert):
            metavar='<status>',
            default=None,
            help='Filter results by status')
-@utils.arg('--account-name',
-           metavar='<account-name>',
-           default=None,
-           help='Filter results by account-name')
-def do_list(args):
+
+def do_volume_list(client, args):
     """List volumes on a cluster."""
-    search_opts = {}
-    import pdb;pdb.set_trace()
+    search_opts = {
+        'all': args.all,
+        'name': args.name,
+        'status': args.status,
+        'account': args.account_name,
+    }
+    vols = volumes().list(search_opts=search_opts)
+
+@utils.arg('volume', metavar='<volume>', help='Volume ID.')
+def do_volume_show(self, args):
+    """Shows volume details."""
+    vol = self.volumes.show(args.volume)
+    utils.print_dict(vol)
 
 @utils.arg('size',
            metavar='<volume-size>',
