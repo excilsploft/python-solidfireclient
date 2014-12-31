@@ -43,7 +43,7 @@ def _extract_kv_pairs(kvs):
                 '  (--keys volumeID,status,accountID)\n')
 
 def do_volume_list(self, args):
-    """List volumes on a cluster."""
+    """ List volumes on a cluster."""
     if args.account:
         vols = self.volumes.list(account_id=args.account)
     else:
@@ -75,7 +75,8 @@ def do_volume_show(self, args):
            default=0,
            help='Deletes all volumes on the cluster *DANGER*.')
 def do_volume_delete(self, args):
-    #  If a Volume is specified we ignore the all option
+    """ Helper method to delete volumes on a SolidFire Cluster.
+    """
     if args.volume:
         self.volumes.delete(args.volume, args.purge)
     else:
@@ -111,6 +112,7 @@ def do_volume_delete(self, args):
            help='Utilize 512 byte emulation.',
            default=False)
 def do_volume_create(self, args):
+    """ Helper method to create a volume on a SolidFire Cluster."""
     options = {'name': args.name,
                'count': args.count,
                'attributes': args.attributes,
@@ -131,6 +133,7 @@ def do_volume_create(self, args):
                 'Volume Object Key.'
                 '  (--keys volumeID,status,accountID)\n')
 def do_ListVolumesForAccount(self, args):
+    """ List all volumes associated with the specified account ID."""
     vlist = self.volumes.ListVolumesForAccount(args.accountID)
     if 'result' in vlist and len(vlist['result']['volumes']) > 0:
         key_list = args.keys.split(',')
@@ -153,6 +156,7 @@ def do_ListVolumesForAccount(self, args):
            default=0,
            help='Max number of Volume info objects to return.')
 def do_ListActiveVolumes(self, args):
+    """List all active volumes on the SolidFire Cluster."""
     vlist = self.volumes.ListActiveVolumes(args.startVolumeID, args.limit)
     if 'result' in vlist and len(vlist['result']['volumes']) > 0:
         key_list = args.keys.split(',')
@@ -169,6 +173,7 @@ def do_ListActiveVolumes(self, args):
            default=0,
            help='Show QoS Curve data in results.')
 def do_GetDefaultQoS(self, args):
+    """List default QoS values on the SolidFire Cluster."""
     qos_summary = {}
     qos = self.volumes.GetDefaultQoS()
     (qos_summary, curve_info) = _reformat_qos_results(qos['result'])
@@ -184,6 +189,7 @@ def do_GetDefaultQoS(self, args):
            default=None,
            help='ID of volume to get stats for')
 def do_GetVolumeStats(self, args):
+    """List statistic values for the specified volume."""
     volume_stats = self.volumes.GetVolumeStats(args.volumeID)
     utils.print_dict(volume_stats['result']['volumeStats'])
     if 'error' in volume_stats:
@@ -195,6 +201,7 @@ def do_GetVolumeStats(self, args):
            default=None,
            help='ID of VolumeAccessGroup to delete')
 def do_DeleteVolumeAccessGroup(self, args):
+    """Delete the specified Volume Access Group."""
     response = self.volumes.DeleteVolumeAccessGroup(
         args.volumeAccessGroupID)
     if 'error' in response:
@@ -205,6 +212,7 @@ def do_DeleteVolumeAccessGroup(self, args):
            default=None,
            help='ID of volume to delete')
 def do_DeleteVolume(self, args):
+    """Delete the specified volume."""
     response = self.volumes.DeleteVolume(args.volumeID)
     if 'error' in response:
         utils.print_dict(response['error'])
@@ -231,6 +239,7 @@ def do_DeleteVolume(self, args):
             help='Comma seperated list of attribute key/value '
                  'pairs (key1=val1,key2=val2)')
 def do_CreateVolumeAccessGroup(self, args):
+    """Create a new volume access group on the SolidFire Cluster."""
     vol_ids = []
     initiator_ids = []
     attributes = {}
@@ -257,6 +266,7 @@ def do_CreateVolumeAccessGroup(self, args):
            default=0,
            help='Max number of Volume Access Group info objects to return.')
 def do_ListVolumeAccessGroups(self, args):
+    """Display the volume access groups currently on the SolidFire Cluster."""
     vag_list = self.volumes.ListVolumeAccessGroups(args.startVAGID, args.limit)
     if 'result' in vag_list and len(vag_list['result']['volumeAccessGroups']) > 0:
         key_list = args.keys.split(',')
