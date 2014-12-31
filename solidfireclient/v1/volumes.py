@@ -412,6 +412,19 @@ class Volume(sfapi.API):
                                       params,
                                       endpoint_dict=None)
 
+    def ListVolumeAccessGroups(self,
+                               startVolumeAccessGroupID=0,
+                               limit=0):
+        """
+        Retrieves a list of volume access groups currently on the cluster.
+
+        """
+        params = {'startVolumeAccessGroupID': startVolumeAccessGroupID,
+                  'limit': limit}
+        return self.issue_api_request('ListVolumeAccessGroups',
+                                      params,
+                                      endpoint_dict=None)
+
     def DeleteVolumeAccessGroup(self, volumeAccessGroupID):
         """
         Used to delete a volume access group.

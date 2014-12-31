@@ -236,3 +236,20 @@ def do_CreateVolumeAccessGroup(self, args):
                                          initiators=initiator_ids,
                                          volumes=vol_ids,
                                          attributes=attributes)
+
+@utils.arg('--startVAGID',
+           metavar='<startVAGID>',
+           default=0,
+           help='Starting VolumeAccessGroupID to return.')
+@utils.arg('--limit',
+           metavar='<limit>',
+           default=0,
+           help='Max number of Volume Access Group info objects to return.')
+def do_ListVolumeAccessGroups(self, args):
+    vag_list = self.volumes.ListVolumeAccessGroups(args.startVAGID, args.limit)
+    if 'result' in vag_list and len(vag_list['result']['volumeAccessGroups']) > 0:
+        key_list = args.keys.split(',')
+        utils.print_list(vag_list['result']['volumeAccessGroups'], key_list)
+    elif 'error' in vag_list:
+        utils.print_dict(vag_list['error'])
+
