@@ -11,7 +11,7 @@ class Client(object):
         self.login = username
         self.password = password
         self.ap_version = '1'
-        self.use_ssl = True
+        self.use_ssl = False
         self.verify_ssl = False
         self.verbose = False
         self.endpoint_dict = self._build_endpoint_dict()
@@ -20,6 +20,7 @@ class Client(object):
         # setting of endpoint_dict var into a single call
         self.volumes = volumes.Volume(self)
         self.volumes.endpoint_dict = self.endpoint_dict
+        self.volumes.debug = kwargs.get('debug', False)
 
     def _build_endpoint_dict(self, **kwargs):
         endpoint = {}

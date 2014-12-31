@@ -40,10 +40,11 @@ def retry(exc_tuple, tries=5, delay=1, backoff=2):
     return retry_dec
 
 class API(object):
-    def __init__(self, endpoint_dict):
+    def __init__(self, endpoint_dict, endpoint_version='1.0'):
         self.endpoint_dict = endpoint_dict
+        self.version = '1.0'
 
-    def issue_api_request(self, method, params, version='1.0', endpoint_dict=None):
+    def issue_api_request(self, method, params, endpoint_dict=None):
         if params is None:
             params = {}
 
@@ -53,18 +54,23 @@ class API(object):
             endpoint_dict = self.endpoint_dict
         payload = {'method': method, 'params': params}
 
-        url = '%s/json-rpc/%s/' % (endpoint_dict['url'], version)
+        url = '%s/json-rpc/%s/' % (endpoint_dict['url'], self.version)
+
+        LOG.debug('Issue SolidFire API call: %s' % json.dumps(payload))
+
         req = requests.post(url,
                             data=json.dumps(payload),
                             auth=(endpoint_dict['login'],
                             endpoint_dict['passwd']),
                             verify=False,
                             timeout=30)
-
         response = req.json()
         req.close()
+
+        LOG.debug('Raw response data from SolidFire API: %s' % response)
+
         if (('error' in response) and
-                (response['error']['name'] in self.retryable_errors)):
+                (response['error']['name'] in retryable_errors)):
             msg = ('Retryable error (%s) encountered during '
                    'SolidFire API call.' % response['error']['name'])
             LOG.warning(msg)

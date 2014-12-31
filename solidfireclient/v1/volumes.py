@@ -2,8 +2,39 @@ from solidfireclient import sfapi
 
 
 class Volume(sfapi.API):
+    """ Volume methods for the SolidFire Cluster.
 
+    We have two groups of methods implemented here.
+
+    1. Some methods defined specifically here for the client
+    2. Methods named exactly as they appear in the API doc
+
+    You can identify these two groups easily by the case used in
+    the method name.  Those that are "specific to the client" use
+    python method naming conventions (all lower case, and underscores).
+
+    The methods that are just straight from the SolidFire API use the
+    same naming convention as the SolidFire API (UpperCase).
+
+    Why both?  Hmm... well there are some things that I like to do
+    in a single call, like delete and purge volumes, or get not only
+    all of the active volumes, but also all of the deleted volumes.
+
+    Might make sense at some point to split these out into seperate
+    modules.
+
+    """
+
+    ###############################################
+    # Combination methods we made up for the client
+    ###############################################
     def list(self, account_id=None):
+        """
+        Retrieve a list of all volumes on the SolidFire Cluster.
+
+        params: account_id Retrieve only those volumes associated
+                with this account
+        """
         vlist = []
         deleted_vols = []
         active_vols = []
@@ -12,13 +43,11 @@ class Volume(sfapi.API):
             params = {}
             response = self.issue_api_request('ListDeletedVolumes',
                                               params,
-                                              version='1.0',
                                               endpoint_dict=None)
             deleted_vols = [v for v in response['result']['volumes']]
 
             response = self.issue_api_request('ListActiveVolumes',
                                               params,
-                                              version='1.0',
                                               endpoint_dict=None)
             active_vols = [v for v in response['result']['volumes']]
             vlist = sorted((deleted_vols + active_vols),
@@ -27,52 +56,80 @@ class Volume(sfapi.API):
             params = {'accountID': account_id}
             response = self.issue_api_request('ListVolumesForAccount',
                                               params,
-                                              version='1.0',
                                               endpoint_dict=None)
             vlist = [v for v in response['result']['volumes']]
             vlist = sorted(vlist, key=lambda k: k['volumeID'])
         return vlist
 
     def show(self, id):
+        """
+        Retrieve details for the specified volume.
+
+        param id: The VolumeID of the volume to be deleted
+        """
+
         params = {}
         response = self.issue_api_request('ListActiveVolumes',
                                           params,
-                                          version='1.0',
                                           endpoint_dict=None)
         vol = [v for v in response['result']['volumes']
                if v['volumeID'] == int(id)]
         return vol[0]
 
     def delete(self, id, purge):
+        """
+        Delete the specified volume from the SolidFire Cluster.
+
+        param id: The VolumeID of the volume to be deleted
+        param purge: True or False, issues purge immediately after delete
+        """
+
         params = {'volumeID': id}
         response = self.issue_api_request('DeleteVolume',
                                           params,
-                                          version='1.0',
                                           endpoint_dict=None)
         if purge:
-            response = self.issue_api_request('PurgeDeletedVolume',
-                                              params,
-                                              version='1.0',
-                                              endpoint_dict=None)
-
+            return self.issue_api_request('PurgeDeletedVolume',
+                                          params,
+                                          endpoint_dict=None)
+        return response
 
     def delete_all(self, purge):
+        """
+        Delete all volumes on the SolidFire Cluster.
+
+        param purge: True or False, issues purge immediately after delete
+        """
+
         vlist = self.list()
         for v in vlist:
             params = {'volumeID': v['volumeID']}
-            response = self.issue_api_request('DeleteVolume',
-                                              params,
-                                              version='1.0',
-                                              endpoint_dict=None)
+            self.issue_api_request('DeleteVolume',
+                                   params,
+                                   endpoint_dict=None)
         if purge:
             for v in vlist:
                 params = {'volumeID': v['volumeID']}
-                response = self.issue_api_request('PurgeDeletedVolume',
-                                                  params,
-                                                  version='1.0',
-                                                  endpoint_dict=None)
+                self.issue_api_request('PurgeDeletedVolume',
+                                       params,
+                                       endpoint_dict=None)
 
     def create(self, size, account_id, **kwargs):
+        """
+        Creates a Volume(s) on the SolidFire Cluster.
+
+        param size: Size in Gig for the new volume
+        param account_id: Account ID to assign volume to
+
+        Optional keyword arguments
+          name: Name of cloned volume (limited to 64 characters, default=None)
+          count: Create multiple volumes with these settings
+          attributes: Dict containting Key Value pairs (extra metadata)
+          chap_secrets: Chap credentials to assign to volume
+          emulation: Set equal to True to enable 512 byte emulation
+          qos: Dict containing Key Value pairs to indicate QoS setings
+
+        """
         volid_list = []
         name = kwargs.get('name', None)
         count = kwargs.get('count', 1)
@@ -82,7 +139,7 @@ class Volume(sfapi.API):
         qos = kwargs.get('qos', {})
         params = {'name': name,
                   'accountID': account_id,
-                  'totalSize': int(size) * pow(10,9),
+                  'totalSize': int(size) * pow(10, 9),
                   'enable512e': enable512e,
                   'attributes': attributes,
                   'qos': qos}
@@ -99,7 +156,6 @@ class Volume(sfapi.API):
         for i in xrange(0, int(count)):
             response = self.issue_api_request('CreateVolume',
                                               params,
-                                              version='1.0',
                                               endpoint_dict=None)
             volid_list.append(response['result']['volumeID'])
             if name is not None:
@@ -110,7 +166,60 @@ class Volume(sfapi.API):
             vlist.append(self.show(id))
         return vlist
 
-    def AddInitiatorsToVolumeAccessGroup(volumeAccessGroupID, initiators):
+    def clone_volume(self, source_volid, name=None,
+                     new_account_id=None, new_size=None, access=None,
+                     attributes=None, qos=None, snapshot_id=None):
+        """
+        Creates a clone of an existing Volume.
+
+        param source_volid: VolumeID for the Volume to be cloned
+
+        Optional keyword arguments:
+          name: Name of cloned volume (limited to 64 characters, default=None)
+          account_id: New account ID to assign clone to
+          new_size: New size of clone in bytes
+          access: Can be readOnly, readWrite, locked or replicationTarget
+          attributes: Dict containting Key Value pairs (extra metadata)
+          qos: Dict containing Key Value pairs to indicate QoS setings
+          snapshot_id: Indicates perform clone from a snapshot as
+                       opposed to the original volume
+
+          * Optional keywords default to copying values from source
+
+        """
+        params = {'volumeID': int(source_volid)}
+        if name:
+            params['name'] = name
+        if new_account_id:
+            params['newAccountID'] = int(new_account_id)
+        if new_size:
+            params['newSize'] = int(new_size)
+        if new_account_id:
+            params['newAccountID'] = new_account_id
+        if access:
+            if access not in ['readOnly', 'readWrite',
+                              'locked', 'replicationTarget']:
+                raise
+            params['access'] = access
+        if attributes:
+            params['attributes'] = attributes
+        if qos:
+            params['qos'] = qos
+        if snapshot_id:
+            params['snapshotID'] = snapshot_id
+
+        response = self.issue_api_request('CloneVolume',
+                                          params,
+                                          endpoint_dict=None)
+
+        return(self.show(response['result']['volumeID']))
+
+    ################################
+    # Native SolidFire API methods #
+    ################################
+    def AddInitiatorsToVolumeAccessGroup(self,
+                                         volumeAccessGroupID,
+                                         initiators):
         """
         Add initiators to a specified volume access group.
 
@@ -118,9 +227,24 @@ class Volume(sfapi.API):
                                    group to add the initiator(s) to
         param initiators: List of initiators (IQNs) to add to the volume
                           access group
+
+        The accepted format of an initiator IQN:
+        iqn.yyyy-mm where y and m are digits, followed by text which must
+        only contain digits, lower-case alphabetic characters, a period (.),
+        colon (:) or dash (-).
+
+        iSCSI example:
+        iqn.2010-01.com.solidfire:c2r9.fc0.2100000e1e09bb8b
+
+        Fibre Channel WWPN example:
+        21:00:00:0e:1e:11:f1:81
         """
         params = {'volumeAccessGroupID': volumeAccessGroupID,
                   'initiators': initiators}
+
+        return self.issue_api_request('AddInitiatorsToVolumeAccessGroup',
+                                      params,
+                                      endpoint_dict=None)
 
     def AddVolumesToVolumeAccessGroup(self, volumeAccessGroupID, volumes):
         """
@@ -133,13 +257,16 @@ class Volume(sfapi.API):
         """
         params = {'volumeAccessGroupID': volumeAccessGroupID,
                   'volumes': volumes}
+        return self.issue_api_request('AddInitiatorsToVolumeAccessGroup',
+                                      params,
+                                      endpoint_dict=None)
 
-    def CloneVolume(volumeID, name,
+    def CloneVolume(self, volumeID, name,
                     attributes={}, newAccountID=None,
                     newSize=None, access=None,
                     snapshotID=None):
         """
-        Create a cop of the requested volume.
+        Create a copy of the requested volume.
 
         This method is asynchronous and may take a variable amount of
         time to complete.
@@ -176,7 +303,11 @@ class Volume(sfapi.API):
         if snapshotID:
             params['snapshotID'] = snapshotID
 
-    def CreateSnapshot(volumeID, attributes={},
+        return self.issue_api_request('CloneVolume',
+                                      params,
+                                      endpoint_dict=None)
+
+    def CreateSnapshot(self, volumeID, attributes={},
                        snapshotID=None, name=None):
         """
         Used to create a point-in-time copy of a volume.
@@ -201,7 +332,11 @@ class Volume(sfapi.API):
         if name:
             params['name'] = name
 
-    def CreateVolume(name, accountID,
+        return self.issue_api_request('CreateSnapshot',
+                                      params,
+                                      endpoint_dict=None)
+
+    def CreateVolume(self, name, accountID,
                      totalSize, enable512e,
                      attributes={}, qos={}):
         """
@@ -226,7 +361,11 @@ class Volume(sfapi.API):
                   'attributes': attributes,
                   'qos': qos}
 
-    def CreateVolumeAccessGroup(name, initiators=[],
+        return self.issue_api_request('CreateVolume',
+                                      params,
+                                      endpoint_dict=None)
+
+    def CreateVolumeAccessGroup(self, name, initiators=[],
                                 volumes=[], attributes={}):
         """
         Used to create a new volume access group.
@@ -243,8 +382,11 @@ class Volume(sfapi.API):
                   'initiators': initiators,
                   'volumes': volumes,
                   'attributes': attributes}
+        return self.issue_api_request('CreateVolumeAccessGroup',
+                                      params,
+                                      endpoint_dict=None)
 
-    def DeleteSnapshot(snapshotID):
+    def DeleteSnapshot(self, snapshotID):
         """
         Used to delete a snapshot.
 
@@ -253,8 +395,11 @@ class Volume(sfapi.API):
         """
 
         params = {'snapshotID': snapshotID}
+        return self.issue_api_request('DeleteSnapshot',
+                                      params,
+                                      endpoint_dict=None)
 
-    def DeleteVolume(volumeID):
+    def DeleteVolume(self, volumeID):
         """
         Used to delete a volume.
 
@@ -263,8 +408,11 @@ class Volume(sfapi.API):
         """
 
         params = {'volumeID': volumeID}
+        return self.issue_api_request('DeleteVolume',
+                                      params,
+                                      endpoint_dict=None)
 
-    def DeleteVolumeAccessGroup(volumeAccessGroupID):
+    def DeleteVolumeAccessGroup(self, volumeAccessGroupID):
         """
         Used to delete a volume access group.
 
@@ -274,8 +422,11 @@ class Volume(sfapi.API):
         """
 
         params = {'volumeAccessGroupID': volumeAccessGroupID}
+        return self.issue_api_request('DeleteVolumeAccessGroup',
+                                      params,
+                                      endpoint_dict=None)
 
-    def GetVolumeStats(volumeID):
+    def GetVolumeStats(self, volumeID):
         """
         Used to retrieve high-level activity measurements for a single volume.
 
@@ -287,28 +438,34 @@ class Volume(sfapi.API):
         """
 
         params = {'volumeID': volumeID}
+        return self.issue_api_request('GetVolumeStats',
+                                      params,
+                                      endpoint_dict=None)
 
-    def GetDefaultQoS():
+    def GetDefaultQoS(self):
         """
         Used to retrieve the default QoS values.
 
         """
 
         params = {}
+        return self.issue_api_request('GetDefaultQoS',
+                                      params,
+                                      endpoint_dict=None)
 
-    def ListActiveVolumes(startVolumeID=0, limit=0):
+    def ListActiveVolumes(self, startVolumeID=0, limit=0):
         """
         Used to retrieve a list of active volumes currently on the cluster.
 
         """
         params = {'startVolumeID': startVolumeID,
                   'limit': limit}
+        return self.issue_api_request('ListActiveVolumes',
+                                      params,
+                                      endpoint_dict=None)
 
-    def ListVolumesForAccount(self, account_id=None, filter=None):
-        if account_id is None:
-            account_id = self._get_account_by_name(self.username)
+    def ListVolumesForAccount(self, account_id):
         params = {'accountID': account_id}
-        response = self.issue_api_request('ListVolumesForAccount',
-                                          params,
-                                          version='1.0',
-                                          endpoint_dict=None)
+        return self.issue_api_request('ListVolumesForAccount',
+                                      params,
+                                      endpoint_dict=None)

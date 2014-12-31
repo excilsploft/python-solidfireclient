@@ -15,6 +15,14 @@ def _translate_volume_results(collection, convert):
             if from_key in keys and to_key not in keys:
                 setattr(item, to_key, item.__info[from_key])
 
+def _reformat_qos_results(raw_qos):
+    qos = {}
+    iop_keys = ['minIOPS', 'maxIOPS', 'burstIOPS']
+    for k in iop_keys:
+        qos[k] = raw_qos[k]
+
+    return (qos, raw_qos['curve'])
+
 @utils.arg('--account',
            metavar='<account>',
            default=None,
@@ -103,3 +111,69 @@ def do_volume_create(self, args):
     vlist = self.volumes.create(args.size, args.account_id, **options)
     for v in vlist:
         utils.print_dict(v)
+
+@utils.arg('accountID',
+           metavar='<accountID>',
+           default=None,
+           help='accountID to list volumes for')
+@utils.arg('--keys',
+           metavar='<volumeID,status,totalSize,accountID,name...>',
+           default='volumeID,status,totalSize,accountID,name',
+           help='keys to display in resultant list, may be any valid SF '
+                'Volume Object Key.'
+                '  (--keys volumeID,status,accountID)\n')
+def do_ListVolumesForAccount(self, args):
+    vlist = self.volumes.ListVolumesForAccount(args.accountID)
+    if 'result' in vlist and len(vlist['result']['volumes']) > 0:
+        key_list = args.keys.split(',')
+        utils.print_list(vlist['result']['volumes'], key_list)
+    elif 'error' in vlist:
+        utils.print_dict(vlist['error'])
+
+@utils.arg('--keys',
+           metavar='<volumeID,status,totalSize,accountID,name...>',
+           default='volumeID,status,totalSize,accountID,name',
+           help='keys to display in resultant list, may be any valid SF '
+                'Volume Object Key.'
+                '  (--keys volumeID,status,accountID)\n')
+@utils.arg('--startVolumeID',
+           metavar='<startVolumeID>',
+           default=0,
+           help='Starting VolumeID to return.')
+@utils.arg('--limit',
+           metavar='<limit>',
+           default=0,
+           help='Max number of Volume info objects to return.')
+def do_ListActiveVolumes(self, args):
+    vlist = self.volumes.ListActiveVolumes(args.startVolumeID, args.limit)
+    if 'result' in vlist and len(vlist['result']['volumes']) > 0:
+        key_list = args.keys.split(',')
+        utils.print_list(vlist['result']['volumes'], key_list)
+    elif 'error' in vlist:
+        utils.print_dict(vlist['error'])
+
+@utils.arg('--show-curve',
+           dest='curve',
+           metavar='<0|1>',
+           nargs='?',
+           type=int,
+           const=1,
+           default=0,
+           help='Show QoS Curve data in results.')
+def do_GetDefaultQoS(self, args):
+    qos_summary = {}
+    qos = self.volumes.GetDefaultQoS()
+    (qos_summary, curve_info) = _reformat_qos_results(qos['result'])
+    if args.curve:
+        qos_summary['curve'] = curve_info
+    utils.print_dict(qos_summary)
+
+@utils.arg('volumeID',
+           metavar='<volumeID>',
+           default=None,
+           help='volumeID to get stats for')
+def do_GetVolumeStats(self, args):
+    volume_stats = self.volumes.GetVolumeStats(args.volumeID)
+    utils.print_dict(volume_stats['result']['volumeStats'])
+
+

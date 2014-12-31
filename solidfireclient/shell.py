@@ -191,10 +191,11 @@ class SolidFireShell(object):
             'password': args.sf_password,
             'admin': args.sf_cluster_admin,
             'admin_password': args.sf_admin_password,
+            'debug': args.debug
         }
 
         # FIXME(jdg) Hard coded for now, fix var later
-        self.sfcli = client.Client('admin', 'admin', '192.168.139.103', version=1)
+        self.sfcli = client.Client('admin', 'admin', '192.168.139.103', version=1, debug=args.debug)
         args.func(self.sfcli, args)
 
     @utils.arg('command', metavar='<subcommand>', nargs='?',

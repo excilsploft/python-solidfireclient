@@ -98,6 +98,8 @@ Example command to show details on a specified volume::
     |    volumePairs     |                                                                                                                    []                                                                                                                   |
     +--------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
+The --debug flag will display the raw data for the call to the SolidFire API as well as the raw response data along with the formatted output
+
 Python API/SDK
 --------------
 The Python libs are seperated by Cluster resources, volumes, accounts, drivers etc.
