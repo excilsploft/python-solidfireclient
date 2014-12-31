@@ -176,6 +176,9 @@ def do_GetDefaultQoS(self, args):
         qos_summary['curve'] = curve_info
     utils.print_dict(qos_summary)
 
+    if 'error' in qos:
+        utils.print_dict(qos['error'])
+
 @utils.arg('volumeID',
            metavar='<volumeID>',
            default=None,
@@ -183,6 +186,8 @@ def do_GetDefaultQoS(self, args):
 def do_GetVolumeStats(self, args):
     volume_stats = self.volumes.GetVolumeStats(args.volumeID)
     utils.print_dict(volume_stats['result']['volumeStats'])
+    if 'error' in volume_stats:
+        utils.print_dict(volume_stats['error'])
 
 
 @utils.arg('volumeAccessGroupID',
@@ -190,15 +195,19 @@ def do_GetVolumeStats(self, args):
            default=None,
            help='ID of VolumeAccessGroup to delete')
 def do_DeleteVolumeAccessGroup(self, args):
-    self.volumes.DeleteVolumeAccessGroup(
+    response = self.volumes.DeleteVolumeAccessGroup(
         args.volumeAccessGroupID)
+    if 'error' in response:
+        utils.print_dict(response['error'])
 
 @utils.arg('volumeID',
            metavar='<volumeID>',
            default=None,
            help='ID of volume to delete')
 def do_DeleteVolume(self, args):
-    self.volumes.DeleteVolume(args.volumeID)
+    response = self.volumes.DeleteVolume(args.volumeID)
+    if 'error' in response:
+        utils.print_dict(response['error'])
 
 @utils.arg('name',
             metavar='<name>',
@@ -232,10 +241,12 @@ def do_CreateVolumeAccessGroup(self, args):
         vol_ids = args.volumes.split(',')
     if args.initiators:
         initiator_ids = args.initiators.split(',')
-    self.volumes.CreateVolumeAccessGroup(args.name,
-                                         initiators=initiator_ids,
-                                         volumes=vol_ids,
-                                         attributes=attributes)
+    response = self.volumes.CreateVolumeAccessGroup(args.name,
+                                                    initiators=initiator_ids,
+                                                    volumes=vol_ids,
+                                                    attributes=attributes)
+    if 'error' in response:
+        utils.print_dict(response['error'])
 
 @utils.arg('--startVAGID',
            metavar='<startVAGID>',
