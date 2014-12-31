@@ -23,6 +23,14 @@ def _reformat_qos_results(raw_qos):
 
     return (qos, raw_qos['curve'])
 
+def _extract_kv_pairs(kvs):
+    kvd = {}
+    for items in kvs:
+        if '=' in items:
+            (k, v) = items.split('=', 1)
+            kvd[k] = v
+    return kvd
+
 @utils.arg('--account',
            metavar='<account>',
            default=None,
@@ -171,9 +179,60 @@ def do_GetDefaultQoS(self, args):
 @utils.arg('volumeID',
            metavar='<volumeID>',
            default=None,
-           help='volumeID to get stats for')
+           help='ID of volume to get stats for')
 def do_GetVolumeStats(self, args):
     volume_stats = self.volumes.GetVolumeStats(args.volumeID)
     utils.print_dict(volume_stats['result']['volumeStats'])
 
 
+@utils.arg('volumeAccessGroupID',
+           metavar='<volumeAccessGroupID>',
+           default=None,
+           help='ID of VolumeAccessGroup to delete')
+def do_DeleteVolumeAccessGroup(self, args):
+    self.volumes.DeleteVolumeAccessGroup(
+        args.volumeAccessGroupID)
+
+@utils.arg('volumeID',
+           metavar='<volumeID>',
+           default=None,
+           help='ID of volume to delete')
+def do_DeleteVolume(self, args):
+    self.volumes.DeleteVolume(args.volumeID)
+
+@utils.arg('name',
+            metavar='<name>',
+            nargs='?',
+            type=str,
+            help='Name of the volume access group being created.')
+@utils.arg('--initiators',
+            metavar='<initiators>',
+            default=[],
+            help='List of IQNs/WWPNs to '
+                 'include in the group (--initiators 1,2,3,4)')
+@utils.arg('--volumes',
+            metavar='<volumes>',
+            default=[],
+            help='List of volume IDs to '
+                 'include in the group (--volumes 1,2,3,4)')
+@utils.arg('--attributes',
+            type=str,
+            #action='append',
+            metavar='key1=value1[,key2=value2]',
+            help='Comma seperated list of attribute key/value '
+                 'pairs (key1=val1,key2=val2)')
+def do_CreateVolumeAccessGroup(self, args):
+    vol_ids = []
+    initiator_ids = []
+    attributes = {}
+
+    if args.attributes:
+        attributes = _extract_kv_pairs(args.attributes.split(','))
+    if args.volumes:
+        vol_ids = args.volumes.split(',')
+    if args.initiators:
+        initiator_ids = args.initiators.split(',')
+    self.volumes.CreateVolumeAccessGroup(args.name,
+                                         initiators=initiator_ids,
+                                         volumes=vol_ids,
+                                         attributes=attributes)
