@@ -54,7 +54,8 @@ class SolidFireShell(object):
                             action='store_true',
                             default=utils.env('SFCLIENT_DEBUG',
                                               default=False),
-                            help='Print debug output')
+                            help='Print debug output (shows raw '
+                                 'SolidFire API call and response data)')
 
         parser.add_argument('--verbose',
                             default=False, action="store_true",
