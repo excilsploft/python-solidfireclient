@@ -1,4 +1,4 @@
-Python SDK and CLI for SolidFire Storage Clusters
+Python Lib and CLI for SolidFire Storage Clusters
 =================================================
 
 This is a Command-Line Client and Python Library for the SolidFire API.
@@ -106,7 +106,7 @@ Example command to show details on a specified volume:
     |    volumePairs     |                                       []                                       |
     +--------------------+--------------------------------------------------------------------------------+
 
-Python API/SDK
+Python API-Lib
 --------------
 
 The Python libs are seperated by Cluster resources, volumes, accounts,
