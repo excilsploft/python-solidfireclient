@@ -195,8 +195,12 @@ class SolidFireShell(object):
             'debug': args.debug
         }
 
-        # FIXME(jdg) Hard coded for now, fix var later
-        self.sfcli = client.Client('admin', 'admin', '192.168.139.103', version=1, debug=args.debug)
+        # FIXME(jdg) Just the basics for now, add all the kwargs later
+        self.sfcli = client.Client(args.sf_login,
+                                   args.sf_password,
+                                   args.sf_mvip,
+                                   version=1,
+                                   debug=args.debug)
         args.func(self.sfcli, args)
 
     @utils.arg('command', metavar='<subcommand>', nargs='?',
