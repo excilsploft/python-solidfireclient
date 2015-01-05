@@ -83,28 +83,28 @@ Help/Documentation for using the shell is also available by running
 
 Example command to show details on a specified volume:
 
-    solidfire volume-show 24596
-    +--------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-    |      Property      |                                                                                                                  Value                                                                                                                  |
-    +--------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-    |       access       |                                                                                                                readWrite                                                                                                                |
-    |     accountID      |                                                                                                                   9573                                                                                                                  |
-    |     attributes     |                                   {u'created_at': u'2014-12-23T07:15:19.000000', u'attached_to': None, u'attach_time': None, u'is_clone': u'False', u'uuid': u'a8a501cb-dd29-46d5-8506-56b652de6055'}                                   |
-    |     createTime     |                                                                                                           2014-12-23T07:15:20Z                                                                                                          |
-    |     deleteTime     |                                                                                                                                                                                                                                         |
-    |     enable512e     |                                                                                                                   True                                                                                                                  |
-    |        iqn         |                                                                              iqn.2010-01.com.solidfire:9kdb.uuid-a8a501cb-dd29-46d5-8506-56b652de6055.23596                                                                             |
-    |        name        |                                                                                                UUID-a8a501cb-dd29-46d5-8506-56b652de6055                                                                                                |
-    |     purgeTime      |                                                                                                                                                                                                                                         |
-    |  scsiEUIDeviceID   |                                                                                                     396b646200005c2cf47acc0100000000                                                                                                    |
-    |  scsiNAADeviceID   |                                                                                                     6f47acc100000000396b646200005c2c                                                                                                    |
-    |     sliceCount     |                                                                                                                    1                                                                                                                    |
-    |       status       |                                                                                                                  active                                                                                                                 |
-    |     totalSize      |                                                                                                                1073741824                                                                                                               |
-    | volumeAccessGroups |                                                                                                                    []                                                                                                                   |
-    |      volumeID      |                                                                                                                  23596                                                                                                                  |
-    |    volumePairs     |                                                                                                                    []                                                                                                                   |
-    +--------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+    solidfire volume-show 30943
+    +--------------------+--------------------------------------------------------------------------------+
+    |      Property      |                                     Value                                      |
+    +--------------------+--------------------------------------------------------------------------------+
+    |       access       |                                   readWrite                                    |
+    |     accountID      |                                     12661                                      |
+    |     attributes     |                                       {}                                       |
+    |     createTime     |                              2014-12-31T02:44:52Z                              |
+    |     deleteTime     |                                                                                |
+    |     enable512e     |                                      True                                      |
+    |        iqn         | iqn.2010-01.com.solidfire:9kdb.uuid-56a2bab0-5223-4fc5-ba4d-0595820ec453.30943 |
+    |        name        |                   UUID-56a2bab0-5223-4fc5-ba4d-0595820ec453                    |
+    |     purgeTime      |                                                                                |
+    |  scsiEUIDeviceID   |                        396b6462000078dff47acc0100000000                        |
+    |  scsiNAADeviceID   |                        6f47acc100000000396b6462000078df                        |
+    |     sliceCount     |                                       1                                        |
+    |       status       |                                     active                                     |
+    |     totalSize      |                                   1073741824                                   |
+    | volumeAccessGroups |                                       []                                       |
+    |      volumeID      |                                     30943                                      |
+    |    volumePairs     |                                       []                                       |
+    +--------------------+--------------------------------------------------------------------------------+
 
 Python API/SDK
 --------------
