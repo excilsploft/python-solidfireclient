@@ -1,42 +1,41 @@
 Python SDK and CLI for SolidFire Storage Clusters
 =================================================
 
-This is a Command-Line Client and Python Library for the SolidFire API.  The
-Client Utility is intended to provide a quick and easy Command Line interface
-to interact with the SolidFire API and is made of up wrapper/helper methods
-to enable a user to do a number of things more easily with their Cluster.
+This is a Command-Line Client and Python Library for the SolidFire API.
+The Client Utility is intended to provide a quick and easy Command Line
+interface to interact with the SolidFire API and is made of up
+wrapper/helper methods to enable a user to do a number of things more
+easily with their Cluster.
 
-The Python Libraries implement the same methods that are used by the Client,
-however in addition they also provide the ability to simply call the SolidFire API
-method directly.  In most cases each will simply take a dictionary which is the API
-parameters.  This should follow the Element API Reference Guide, and simply
-provide some wrappers around the calls to make automation easier.
+The Python Libraries implement the same methods that are used by the
+Client, however in addition they also provide the ability to simply call
+the SolidFire API method directly. In most cases each will simply take a
+dictionary which is the API parameters. This should follow the Element
+API Reference Guide, and simply provide some wrappers around the calls
+to make automation easier.
 
 Check out the specific sections and examples below.
 
-NOTE:
-This is very much a work in progress, the idea started over a year ago and just finally decided to try it out on a VERY cold
-and snowy day after Christmas.
+NOTE: This is very much a work in progress, the idea started over a year
+ago and just finally decided to try it out on a VERY cold and snowy day
+after Christmas.
 
 Installation
--------------
+------------
 
-These modules are still in early development and while
-available in private git repo, they are not currently
-being published to PyPI (hopefully they will be).
+These modules are still in early development and while available in
+private git repo, they are not currently being published to PyPI
+(hopefully they will be).
 
-Best way to install is to clone the repository and
-use pip:
+Best way to install is to clone the repository and use pip:
 
-    `pip install -e <path-to-local-repository>`
-
-
+> pip install -e \<path-to-local-repository\>
 
 Command-Line Usage
 ------------------
-To use the Command-Line you will need to either provide your
-SolidFire credentials on the command line, or set them as
-environment variable::
+
+To use the Command-Line you will need to either provide your SolidFire
+credentials on the command line, or set them as environment variable:
 
     export SF_USERNAME=admin
     export SF_PASSWORD=password
@@ -44,7 +43,7 @@ environment variable::
 
 Help/Documentation for using the shell is also available by running
 
-``solidfire --help``::
+`solidfire --help`:
 
     usage: solidfire [--debug] [--verbose] [--sf-login <sf-login>]
                      [--sf-password <sf-password>] [--sf-mvip <cluster-mgmt-ip>]
@@ -82,7 +81,7 @@ Help/Documentation for using the shell is also available by running
 
     See "solidfire help COMMAND" for help on a specific command.
 
-Example command to show details on a specified volume::
+Example command to show details on a specified volume:
 
     solidfire volume-show 24596
     +--------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
@@ -110,14 +109,15 @@ Example command to show details on a specified volume::
 
 Python API/SDK
 --------------
-The Python libs are seperated by Cluster resources, volumes, accounts, drivers etc.
-The same calls that are available via the Command-Line are also available from the lib,
-the biggest difference however is that we return that dictionary of the
-SolidFire API response directly.
+
+The Python libs are seperated by Cluster resources, volumes, accounts,
+drivers etc. The same calls that are available via the Command-Line are
+also available from the lib, the biggest difference however is that we
+return that dictionary of the SolidFire API response directly.
 
 NOTE: env variable reading isn't setup in the lib *yet* but will be
 
-Example using the Python libs::
+Example using the Python libs:
 
     >>> from solidfireclient import client as sfc
     >>> sf_client = sfc.Client('admin', 'admin', '192.168.139.103')
