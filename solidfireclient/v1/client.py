@@ -1,5 +1,6 @@
 import logging
 
+from solidfireclient.v1 import cluster
 from solidfireclient.v1 import volumes
 
 LOG = logging.getLogger(__name__)
@@ -21,6 +22,10 @@ class Client(object):
         self.volumes = volumes.Volume(self)
         self.volumes.endpoint_dict = self.endpoint_dict
         self.volumes.debug = kwargs.get('debug', False)
+
+        self.cluster = cluster.Cluster(self)
+        self.cluster.endpoint_dict = self.endpoint_dict
+        self.cluster.debug = kwargs.get('debug', False)
 
     def _build_endpoint_dict(self, **kwargs):
         endpoint = {}

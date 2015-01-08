@@ -274,3 +274,14 @@ def do_ListVolumeAccessGroups(self, args):
     elif 'error' in vag_list:
         utils.print_dict(vag_list['error'])
 
+def do_GetClusterVersionInfo(self, args):
+    version_info = self.cluster.GetClusterVersionInfo()
+    if 'result' in version_info:
+        formatted_resp = version_info['result']
+        nodes = formatted_resp.pop('clusterVersionInfo')
+        utils.print_dict(formatted_resp)
+        for node in nodes:
+            utils.print_list(nodes, ['nodeVersion', 'nodeID'])
+    elif 'error' in version_info:
+        utils.print_dict(version_info['error'])
+
