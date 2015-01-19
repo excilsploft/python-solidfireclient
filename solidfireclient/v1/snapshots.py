@@ -1,7 +1,7 @@
 from solidfireclient import sfapi
 
 
-class Snapsho(sfapi.API):
+class Snapshot(sfapi.API):
 
     def list(self, volid=None):
         """
