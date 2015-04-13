@@ -1,11 +1,6 @@
-import argparse
-import os
-import sys
-import time
+import six
 
-from solidfireclient import exceptions
 from solidfireclient import utils
-from solidfireclient.v1.volumes import Volume as volumes
 
 
 def _translate_volume_results(collection, convert):
@@ -15,6 +10,7 @@ def _translate_volume_results(collection, convert):
             if from_key in keys and to_key not in keys:
                 setattr(item, to_key, item.__info[from_key])
 
+
 def _reformat_qos_results(raw_qos):
     qos = {}
     iop_keys = ['minIOPS', 'maxIOPS', 'burstIOPS']
@@ -22,6 +18,7 @@ def _reformat_qos_results(raw_qos):
         qos[k] = raw_qos[k]
 
     return (qos, raw_qos['curve'])
+
 
 def _extract_kv_pairs(kvs):
     kvd = {}
@@ -31,6 +28,24 @@ def _extract_kv_pairs(kvs):
             kvd[k] = v
     return kvd
 
+
+def do_volume_attributes(self, args):
+    """ List volume attributes."""
+    attributes = self.volumes.list_attributes()
+    attrs = [{'VolumeAttribute': val} for val in attributes]
+    utils.print_list(attrs, ['VolumeAttribute'])
+
+
+@utils.arg('--deleted',
+           metavar='<True|False>',
+           default=False,
+           help='Displays a list of all/only the deleted Volumes '
+                'on the Cluster. Default=False.')
+@utils.arg('--verbose',
+           metavar='<True|False>',
+           default=False,
+           help='Includes all available details associated with each volume. '
+                'Default=False.')
 @utils.arg('--account',
            metavar='<account>',
            default=None,
@@ -41,21 +56,27 @@ def _extract_kv_pairs(kvs):
            help='keys to display in resultant list, may be any valid SF '
                 'Volume Object Key.'
                 '  (--keys volumeID,status,accountID)\n')
-
 def do_volume_list(self, args):
     """ List volumes on a cluster."""
-    if args.account:
+    if args.deleted:
+        vols = self.volumes.list_deleted()
+    elif args.account:
         vols = self.volumes.list(account_id=args.account)
     else:
         vols = self.volumes.list()
-    key_list = args.keys.split(',')
+    if args.verbose:
+        key_list = [k for k, v in six.iteritems(vols[0].__dict__)]
+    else:
+        key_list = args.keys.split(',')
     utils.print_list(vols, key_list)
+
 
 @utils.arg('volume', metavar='<volume>', help='Volume ID.')
 def do_volume_show(self, args):
     """Shows volume details."""
     vol = self.volumes.show(args.volume)
     utils.print_dict(vol)
+
 
 @utils.arg('volume', metavar='<volume>', help='Volume ID.')
 @utils.arg('--purge',
@@ -81,6 +102,7 @@ def do_volume_delete(self, args):
         self.volumes.delete(args.volume, args.purge)
     else:
         self.volumes.delete_all(args.purge)
+
 
 @utils.arg('size',
            metavar='<volume-size>',
@@ -113,6 +135,7 @@ def do_volume_delete(self, args):
            default=False)
 def do_volume_create(self, args):
     """ Helper method to create a volume on a SolidFire Cluster."""
+
     options = {'name': args.name,
                'count': args.count,
                'attributes': args.attributes,
@@ -122,166 +145,28 @@ def do_volume_create(self, args):
     for v in vlist:
         utils.print_dict(v)
 
-@utils.arg('accountID',
-           metavar='<accountID>',
-           default=None,
-           help='accountID to list volumes for')
-@utils.arg('--keys',
-           metavar='<volumeID,status,totalSize,accountID,name...>',
-           default='volumeID,status,totalSize,accountID,name',
-           help='keys to display in resultant list, may be any valid SF '
-                'Volume Object Key.'
-                '  (--keys volumeID,status,accountID)\n')
-def do_ListVolumesForAccount(self, args):
-    """ List all volumes associated with the specified account ID."""
-    vlist = self.volumes.ListVolumesForAccount(args.accountID)
-    if 'result' in vlist and len(vlist['result']['volumes']) > 0:
-        key_list = args.keys.split(',')
-        utils.print_list(vlist['result']['volumes'], key_list)
-    elif 'error' in vlist:
-        utils.print_dict(vlist['error'])
 
 @utils.arg('--keys',
-           metavar='<volumeID,status,totalSize,accountID,name...>',
-           default='volumeID,status,totalSize,accountID,name',
+           metavar='<accountID, status, name...>',
+           default='',
            help='keys to display in resultant list, may be any valid SF '
-                'Volume Object Key.'
-                '  (--keys volumeID,status,accountID)\n')
-@utils.arg('--startVolumeID',
-           metavar='<startVolumeID>',
-           default=0,
-           help='Starting VolumeID to return.')
-@utils.arg('--limit',
-           metavar='<limit>',
-           default=0,
-           help='Max number of Volume info objects to return.')
-def do_ListActiveVolumes(self, args):
-    """List all active volumes on the SolidFire Cluster."""
-    vlist = self.volumes.ListActiveVolumes(args.startVolumeID, args.limit)
-    if 'result' in vlist and len(vlist['result']['volumes']) > 0:
-        key_list = args.keys.split(',')
-        utils.print_list(vlist['result']['volumes'], key_list)
-    elif 'error' in vlist:
-        utils.print_dict(vlist['error'])
+                'Account Object Key.'
+                '  (--keys accountID,status) Default: Show all keys\n')
+@utils.arg('--sort',
+           metavar='<key-name>',
+           default='accountID',
+           help='Account attribute to sort displayed results by. '
+                'Default: accountID.')
+def do_account_list(self, args):
+    """ List accounts on a cluster."""
 
-@utils.arg('--show-curve',
-           dest='curve',
-           metavar='<0|1>',
-           nargs='?',
-           type=int,
-           const=1,
-           default=0,
-           help='Show QoS Curve data in results.')
-def do_GetDefaultQoS(self, args):
-    """List default QoS values on the SolidFire Cluster."""
-    qos_summary = {}
-    qos = self.volumes.GetDefaultQoS()
-    (qos_summary, curve_info) = _reformat_qos_results(qos['result'])
-    if args.curve:
-        qos_summary['curve'] = curve_info
-    utils.print_dict(qos_summary)
-
-    if 'error' in qos:
-        utils.print_dict(qos['error'])
-
-@utils.arg('volumeID',
-           metavar='<volumeID>',
-           default=None,
-           help='ID of volume to get stats for')
-def do_GetVolumeStats(self, args):
-    """List statistic values for the specified volume."""
-    volume_stats = self.volumes.GetVolumeStats(args.volumeID)
-    utils.print_dict(volume_stats['result']['volumeStats'])
-    if 'error' in volume_stats:
-        utils.print_dict(volume_stats['error'])
+    accounts = self.accounts.list(args.sort)
+    key_list = [k for k, v in six.iteritems(accounts[0].__dict__)]
+    utils.print_list(accounts, key_list)
 
 
-@utils.arg('volumeAccessGroupID',
-           metavar='<volumeAccessGroupID>',
-           default=None,
-           help='ID of VolumeAccessGroup to delete')
-def do_DeleteVolumeAccessGroup(self, args):
-    """Delete the specified Volume Access Group."""
-    response = self.volumes.DeleteVolumeAccessGroup(
-        args.volumeAccessGroupID)
-    if 'error' in response:
-        utils.print_dict(response['error'])
-
-@utils.arg('volumeID',
-           metavar='<volumeID>',
-           default=None,
-           help='ID of volume to delete')
-def do_DeleteVolume(self, args):
-    """Delete the specified volume."""
-    response = self.volumes.DeleteVolume(args.volumeID)
-    if 'error' in response:
-        utils.print_dict(response['error'])
-
-@utils.arg('name',
-            metavar='<name>',
-            nargs='?',
-            type=str,
-            help='Name of the volume access group being created.')
-@utils.arg('--initiators',
-            metavar='<initiators>',
-            default=[],
-            help='List of IQNs/WWPNs to '
-                 'include in the group (--initiators 1,2,3,4)')
-@utils.arg('--volumes',
-            metavar='<volumes>',
-            default=[],
-            help='List of volume IDs to '
-                 'include in the group (--volumes 1,2,3,4)')
-@utils.arg('--attributes',
-            type=str,
-            #action='append',
-            metavar='key1=value1[,key2=value2]',
-            help='Comma seperated list of attribute key/value '
-                 'pairs (key1=val1,key2=val2)')
-def do_CreateVolumeAccessGroup(self, args):
-    """Create a new volume access group on the SolidFire Cluster."""
-    vol_ids = []
-    initiator_ids = []
-    attributes = {}
-
-    if args.attributes:
-        attributes = _extract_kv_pairs(args.attributes.split(','))
-    if args.volumes:
-        vol_ids = args.volumes.split(',')
-    if args.initiators:
-        initiator_ids = args.initiators.split(',')
-    response = self.volumes.CreateVolumeAccessGroup(args.name,
-                                                    initiators=initiator_ids,
-                                                    volumes=vol_ids,
-                                                    attributes=attributes)
-    if 'error' in response:
-        utils.print_dict(response['error'])
-
-@utils.arg('--startVAGID',
-           metavar='<startVAGID>',
-           default=0,
-           help='Starting VolumeAccessGroupID to return.')
-@utils.arg('--limit',
-           metavar='<limit>',
-           default=0,
-           help='Max number of Volume Access Group info objects to return.')
-def do_ListVolumeAccessGroups(self, args):
-    """Display the volume access groups currently on the SolidFire Cluster."""
-    vag_list = self.volumes.ListVolumeAccessGroups(args.startVAGID, args.limit)
-    if 'result' in vag_list and len(vag_list['result']['volumeAccessGroups']) > 0:
-        key_list = args.keys.split(',')
-        utils.print_list(vag_list['result']['volumeAccessGroups'], key_list)
-    elif 'error' in vag_list:
-        utils.print_dict(vag_list['error'])
-
-def do_GetClusterVersionInfo(self, args):
-    version_info = self.cluster.GetClusterVersionInfo()
-    if 'result' in version_info:
-        formatted_resp = version_info['result']
-        nodes = formatted_resp.pop('clusterVersionInfo')
-        utils.print_dict(formatted_resp)
-        for node in nodes:
-            utils.print_list(nodes, ['nodeVersion', 'nodeID'])
-    elif 'error' in version_info:
-        utils.print_dict(version_info['error'])
-
+def do_account_attributes(self, args):
+    """ List Account attributes."""
+    attributes = self.accounts.list_attributes()
+    attrs = [{'AccountAttribute': val} for val in attributes]
+    utils.print_list(attrs, ['AccountAttribute'])
