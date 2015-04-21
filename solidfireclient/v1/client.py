@@ -4,8 +4,8 @@ from solidfireclient.v1 import cluster
 from solidfireclient.v1 import volumes
 from solidfireclient.v1 import accounts
 
-
 LOG = logging.getLogger(__name__)
+
 
 class Client(object):
     def __init__(self, username, password, mvip=None, **kwargs):

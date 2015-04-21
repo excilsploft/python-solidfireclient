@@ -3,7 +3,6 @@ import six
 
 from solidfireclient import sfapi
 
-
 LOG = logging.getLogger(__name__)
 logging.basicConfig()
 
@@ -276,4 +275,5 @@ class Volume(sfapi.API):
         if self.raw:
             return response['snapshots']
         else:
-            return self._convert_dict_to_resource_objects(response['snapshots'])
+            return self._convert_dict_to_resource_objects(
+                response['snapshots'])

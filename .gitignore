@@ -3,5 +3,6 @@
 *~
 build
 dist
-solidfireclient/versioninfo
 python_solidfireclient.egg-info
+solidfireclient/versioninfo
+.tox
