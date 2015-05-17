@@ -1,7 +1,25 @@
-from solidfireclient import sfapi
+from solidfireclient.v1 import solidfire_element_api as sfapi
 
 
-class Snapshot(sfapi.API):
+class Snapshot(sfapi.SolidFireAPI):
+
+    def _list_active_snapshots(self, start_id=0, limit=0):
+        return self._send_request('ListSnapshots',
+                                      {},
+                                      endpoint=None)
+
+    def _list_deleted_volumes(self):
+        return self._send_request('ListDeletedVolumes',
+                                      {},
+                                      endpoint=None)
+
+    def _list_volumes_for_account(self, account_id):
+        return self._send_request('ListVolumesForAccount',
+                                      {'accountID': account_id},
+                                      endpoint=None)
+
+    def _filter_response(self, filter):
+        pass
 
     def list(self, volid=None):
         """
@@ -12,19 +30,20 @@ class Snapshot(sfapi.API):
         volume or group.
 
         Option keyword arguments:
-            volid: Retrieve only those volumes associated
-                   with this account
+            volid: Retrieve only those snapshots associated
+                   with this volume ID
         """
-        # slist = []
+        slist = []
         params = {}
         if volid:
             params['voumeID'] = int(volid)
 
-        response = self.issue_api_request('ListSnapshots',
+        response = self._send_request('ListSnapshots',
                                           params,
-                                          endpoint_dict=None)
+                                          endpoint=None)
 
-        snapshots = [s for s in response['result']['snapshots']]
+        # snapshots = [s for s in response['result']['snapshots']]
+        snapshots = response['snapshots']
         return sorted(snapshots, key=lambda k: k['snapshotID'])
 
     def show(self, id):
@@ -47,9 +66,9 @@ class Snapshot(sfapi.API):
 
         volumes = [{'volumeID': int(id)} for id in volid_list]
         params = {'volumes': volumes}
-        response = self.issue_api_request('ListSnapshots',
+        response = self._send_request('ListSnapshots',
                                           params,
-                                          endpoint_dict=None)
+                                          endpoint=None)
 
         # TODO(jdg): Might want to sort these in the future?
         return [s for s in response['result']['groupSnapshots']]
@@ -63,13 +82,13 @@ class Snapshot(sfapi.API):
         """
 
         params = {'volumeID': id}
-        self.issue_api_request('DeleteVolume',
-                               params,
-                               endpoint_dict=None)
+        response = self._send_request('DeleteVolume',
+                                          params,
+                                          endpoint=None)
         if purge:
-            self.issue_api_request('PurgeDeletedVolume',
-                                   params,
-                                   endpoint_dict=None)
+            response = self._send_request('PurgeDeletedVolume',
+                                              params,
+                                              endpoint=None)
 
     def create(self, volid,
                name=None, snapshot_id=None,
@@ -94,7 +113,7 @@ class Snapshot(sfapi.API):
         if attributes:
             params['attributes'] = attributes
 
-        response = self.issue_api_request('CreateSnapshot',
+        response = self._send_request('CreateSnapshot',
                                           params,
-                                          endpoint_dict=None)
+                                          endpoint=None)
         return self.show(response['result']['snapshotID'])

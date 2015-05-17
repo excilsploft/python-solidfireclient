@@ -1,13 +1,19 @@
 import logging
 import six
 
-from solidfireclient import sfapi
+from solidfireclient.v1 import solidfire_element_api as sfapi
+from solidfireclient.v1 import object_utils
 
 LOG = logging.getLogger(__name__)
 logging.basicConfig()
 
+# Handy:
+# type(volumes[1]) is dict
+# True
+# type(vobs[1]) is dict
+# False
 
-class Volume(sfapi.API):
+class Volume(sfapi.SolidFireAPI):
     """ Volume methods for the SolidFire Cluster. """
 
     def list_attributes(self):
@@ -20,13 +26,15 @@ class Volume(sfapi.API):
         """
 
         try:
-            volumes = self.ListActiveVolumes()['volumes']
+            volumes = self.list_active_volumes()
         except Exception:
             # TOOD(jdg): Catch exception and show error info
             pass
         if len(volumes) < 1:
             # TODO(jdg): Raise here as we need at least one vol to interrogate
-            pass
+            # and return an empty list
+            raise Exception
+
         return [k for k, v in six.iteritems(volumes[0])]
 
     def list(self, start_id=0, limit=0, account_id=None):
@@ -43,30 +51,32 @@ class Volume(sfapi.API):
 
         if account_id is None:
             try:
-                volumes = self.ListActiveVolumes(start_id, limit)['volumes']
+                volumes = self.list_active_volumes(start_id, limit)
             except Exception:
                 # TOOD(jdg): Catch exception and show error info
                 pass
 
         else:
             try:
-                volumes = self.ListVolumesForAccount(account_id)['volumes']
+                volumes = self.list_volumes_for_account(account_id)
             except Exception:
                 # TOOD(jdg): Catch exception and show error info
                 pass
 
-        # NOTE(jdg): Make MikeT happy... add on snapshots
+        snapshots = []
         try:
-            snapshots = self.ListSnapshots()['snapshots']
+            snapshots = self.list_snapshots()
         except Exception:
             # TOOD(jdg): Catch exception and show error info
             pass
+
+        if len(volumes) == 0:
+            return None
 
         # Meld the snapshot ID's into the volumes we got back
         for v in volumes:
             snap_ids = [entry['snapshotID'] for entry
                         in snapshots if entry['volumeID'] == v['volumeID']]
-
             v['snapshots'] = snap_ids
 
         volumes = sorted((volumes),
@@ -74,7 +84,7 @@ class Volume(sfapi.API):
         if self.raw:
             return volumes
         else:
-            return self._convert_dict_to_resource_objects(volumes)
+            return object_utils.convert_dict_to_object(volumes)
 
     def show(self, volid):
         """
@@ -87,14 +97,19 @@ class Volume(sfapi.API):
         """
 
         try:
-            volume = self.ListActiveVolumes(volid, 1)['volumes']
+            response = self.list(volid, 1)
         except Exception:
             # TOOD(jdg): Catch exception and show error info
             pass
+
+        if len(response) != 1:
+            raise Exception
+
+        volume = response[0]
         if self.raw:
             return volume
         else:
-            return self._convert_dict_to_resource_objects(volume)
+            return object_utils.convert_dict_to_object(volume)
 
     def list_deleted(self):
         """
@@ -104,7 +119,7 @@ class Volume(sfapi.API):
         volumes = []
 
         try:
-            volumes = self.ListDeletedVolumes()['volumes']
+            volumes = self.list_deleted_volumes()
         except Exception:
             # TOOD(jdg): Catch exception and show error info
             pass
@@ -112,7 +127,7 @@ class Volume(sfapi.API):
         if self.raw:
             return volumes
         else:
-            return self._convert_dict_to_resource_objects(volumes)
+            return object_utils.convert_dict_to_object(volumes)
 
     def show_deleted(self, volid):
         """
@@ -126,7 +141,7 @@ class Volume(sfapi.API):
         volumes = []
 
         try:
-            volumes = self.ListDeletedVolumes()['volumes']
+            volumes = self.list_deleted_volumes()
         except Exception:
             # TOOD(jdg): Catch exception and show error info
             pass
@@ -143,9 +158,9 @@ class Volume(sfapi.API):
         """
 
         try:
-            self.DeleteVolume(volid)
+            self.delete_volume(volid)
             if purge:
-                self.PurgeDeletedVolume(volid)
+                self.purge_deleted_volume(volid)
         except Exception:
             pass
         return None
@@ -163,7 +178,7 @@ class Volume(sfapi.API):
         if purge:
             dlist = self.list_deleted()
             for v in dlist:
-                self.PurgeDeletedVolume(v.volumeID)
+                self.purge_deleted_volume(v.volumeID)
 
     def create(self, size, account_id, **kwargs):
         """
@@ -205,9 +220,9 @@ class Volume(sfapi.API):
             params['chap_secrets'] = chap_secrets
 
         for i in xrange(0, int(count)):
-            response = self.issue_api_request('CreateVolume',
-                                              params,
-                                              endpoint_dict=None)
+            response = self.create_volume(name, account_id,
+                                          int(size) * pow(10, 9),
+                                          enable512e, qos, attributes)
             volid_list.append(response['volumeID'])
             if name is not None:
                 params['name'] = params['name'] + ('-%s' % i)
@@ -238,42 +253,24 @@ class Volume(sfapi.API):
           * Optional keywords default to copying values from source
 
         """
-        params = {'volumeID': int(source_volid)}
-        if name:
-            params['name'] = name
-        if new_account_id:
-            params['newAccountID'] = int(new_account_id)
-        if new_size:
-            params['newSize'] = int(new_size)
-        if new_account_id:
-            params['newAccountID'] = new_account_id
-        if access:
-            if access not in ['readOnly', 'readWrite',
-                              'locked', 'replicationTarget']:
+        if access and access not in ['readOnly', 'readWrite',
+                                     'locked', 'replicationTarget']:
                 raise
-            params['access'] = access
-        if attributes:
-            params['attributes'] = attributes
-        if qos:
-            params['qos'] = qos
-        if snapshot_id:
-            params['snapshotID'] = snapshot_id
 
-        response = self.issue_api_request('CloneVolume',
-                                          params,
-                                          endpoint_dict=None)
+        response = self.clone_volume(source_volid, name, new_account_id,
+                                     int(new_size) * pow(10, 9), access,
+                                     snapshot_id, attributes)
 
         return(self.show(response['volumeID']))
 
-    def list_snapshots(self, volume_id=None):
+    def list_snaps(self, volume_id=None):
 
         try:
-            response = self.ListSnapshots(volume_id)
+            snapshots = self.list_snapshots(volume_id)
         except:
             # TODO(jdg): Catch key not found
             pass
         if self.raw:
-            return response['snapshots']
+            return snapshots
         else:
-            return self._convert_dict_to_resource_objects(
-                response['snapshots'])
+            return object_utils.convert_dict_to_object(snapshots)

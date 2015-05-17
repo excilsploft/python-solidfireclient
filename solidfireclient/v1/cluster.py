@@ -1,4 +1,4 @@
-from solidfireclient import sfapi
+from solidfireclient.v1 import solidfire_api as sfapi
 
 
 class Cluster(sfapi.API):
