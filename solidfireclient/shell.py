@@ -12,7 +12,6 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-
 """
 Command-line interface to the SolidFire API.
 """
@@ -121,8 +120,6 @@ class SolidFireShell(object):
         # have a v1 so don't worry about it
         self._find_actions(subparsers, shell_v1)
         self._find_actions(subparsers, self)
-
-
         return parser
 
     def _find_actions(self, subparsers, actions_module):
@@ -161,7 +158,7 @@ class SolidFireShell(object):
         (options, args) = parser.parse_known_args(argv)
         self._set_debug(options.debug)
 
-        api_version = options.solidfire_api_version
+        # api_version = options.solidfire_api_version
         subcommand_parser = self.get_subcommand_parser()
         self.parser = subcommand_parser
 
@@ -186,14 +183,14 @@ class SolidFireShell(object):
             raise exc.CommandError("You must provide a password via"
                                    " either --sf-password or env[SF_PASSWORD]")
 
-        kwargs = {
-            'mvip': args.sf_mvip,
-            'username': args.sf_login,
-            'password': args.sf_password,
-            'admin': args.sf_cluster_admin,
-            'admin_password': args.sf_admin_password,
-            'debug': args.debug
-        }
+        # kwargs = {
+        #     'mvip': args.sf_mvip,
+        #     'username': args.sf_login,
+        #     'password': args.sf_password,
+        #     'admin': args.sf_cluster_admin,
+        #     'admin_password': args.sf_admin_password,
+        #     'debug': args.debug
+        # }
 
         # FIXME(jdg) Just the basics for now, add all the kwargs later
         self.sfcli = client.Client(args.sf_login,

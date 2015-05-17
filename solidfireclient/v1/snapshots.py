@@ -1,7 +1,7 @@
 from solidfireclient import sfapi
 
 
-class Snapsho(sfapi.API):
+class Snapshot(sfapi.API):
 
     def list(self, volid=None):
         """
@@ -15,7 +15,7 @@ class Snapsho(sfapi.API):
             volid: Retrieve only those volumes associated
                    with this account
         """
-        slist = []
+        # slist = []
         params = {}
         if volid:
             params['voumeID'] = int(volid)
@@ -63,13 +63,13 @@ class Snapsho(sfapi.API):
         """
 
         params = {'volumeID': id}
-        response = self.issue_api_request('DeleteVolume',
-                                          params,
-                                          endpoint_dict=None)
+        self.issue_api_request('DeleteVolume',
+                               params,
+                               endpoint_dict=None)
         if purge:
-            response = self.issue_api_request('PurgeDeletedVolume',
-                                              params,
-                                              endpoint_dict=None)
+            self.issue_api_request('PurgeDeletedVolume',
+                                   params,
+                                   endpoint_dict=None)
 
     def create(self, volid,
                name=None, snapshot_id=None,
