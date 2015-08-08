@@ -92,16 +92,8 @@ def do_volume_delete(self, args):
     """
     self.volumes.delete(args.volumes, args.purge)
 
-@utils.arg('--start',
-           metavar='<start>',
-           default=0,
-           type=int,
-           help='Starting ID')
-@utils.arg('--end',
-           metavar='<end>',
-           default=0,
-           type=int,
-           help='Ending ID')
+@utils.arg('start', metavar='<start-id>', help='Volume ID to start.')
+@utils.arg('end', metavar='<end-id>', help='Volume ID to end.')
 @utils.arg('--purge',
            dest='purge',
            metavar='<True|False>',
@@ -115,7 +107,7 @@ def do_volume_delete_range(self, args):
     Builds a sequential list of Volume IDs including <start> through
     <end>, and deletes any existing volume within that range.
     """
-    volumes = list(xrange(args.start, args.end + 1))
+    volumes = list(xrange(int(args.start), int(args.end) + 1))
     self.volumes.delete(volumes, args.purge)
 
 
@@ -154,9 +146,6 @@ def do_volume_create(self, args):
     for v in vlist:
         utils.print_dict(v)
 
-#def clone_volume(self, source_volid, name=None,
-#                     new_account_id=None, new_size=None, access=None,
-#                     attributes=None, qos=None, snapshot_id=None):
 @utils.arg('volume',
            metavar='<volume-id>',
            default=None,
