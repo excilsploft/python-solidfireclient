@@ -2,6 +2,8 @@ import json
 import logging
 
 import requests
+from requests.packages.urllib3 import exceptions
+import warnings
 
 LOG = logging.getLogger(__name__)
 
@@ -11,7 +13,7 @@ class SolidFireAPI(object):
     """The API for controlling a SolidFire cluster."""
     def __init__(self, endpoint_dict, endpoint_version='6.0'):
         self.endpoint_dict = endpoint_dict
-        self.endpoint_version = '6.0'
+        self.endpoint_version = endpoint_version
         self.raw = True
 
     def _send_request(self, method, params, endpoint=None):
@@ -28,12 +30,15 @@ class SolidFireAPI(object):
 
         LOG.debug('Issue SolidFire API call: %s' % json.dumps(payload))
 
-        req = requests.post(url,
-                            data=json.dumps(payload),
-                            auth=(endpoint_dict['login'],
-                                  endpoint_dict['passwd']),
-                            verify=False,
-                            timeout=30)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", exceptions.InsecureRequestWarning)
+            req = requests.post(url,
+                                data=json.dumps(payload),
+                                auth=(endpoint_dict['login'],
+                                      endpoint_dict['passwd']),
+                                verify=False,
+                                timeout=30)
+
         response = req.json()
         req.close()
         # TODO(jdg): Fix the above, failure cases like wrong password
@@ -274,7 +279,7 @@ class SolidFireAPI(object):
             params["startAccountID"] = start_account_id
         if limit is not None:
             params["limit"] = limit
-        return self._send_request('ListAccounts', params)
+        return self._send_request('ListAccounts', params)['accounts']
 
     def remove_account(self, account_id):
         """Remove an account from the system.

@@ -64,6 +64,7 @@ def do_volume_list(self, args):
         vols = self.volumes.list(account_id=args.account)
     else:
         vols = self.volumes.list()
+
     if args.verbose:
         key_list = [k for k, v in six.iteritems(vols[0].__dict__)]
     else:
@@ -78,30 +79,44 @@ def do_volume_show(self, args):
     utils.print_dict(vol)
 
 
-@utils.arg('volume', metavar='<volume>', help='Volume ID.')
+@utils.arg('volumes', metavar='<volids>', nargs='+', help='List of Volume IDs to delete.')
 @utils.arg('--purge',
            dest='purge',
-           metavar='<0|1>',
+           metavar='<True|False>',
            nargs='?',
-           type=int,
-           const=1,
-           default=0,
+           type=bool,
+           default=False,
            help='Issue purge immediately after delete.')
-@utils.arg('--all',
-           dest='all',
-           metavar='<0|1>',
-           nargs='?',
-           type=int,
-           const=1,
-           default=0,
-           help='Deletes all volumes on the cluster *DANGER*.')
 def do_volume_delete(self, args):
     """ Helper method to delete volumes on a SolidFire Cluster.
     """
-    if args.volume:
-        self.volumes.delete(args.volume, args.purge)
-    else:
-        self.volumes.delete_all(args.purge)
+    self.volumes.delete(args.volumes, args.purge)
+
+@utils.arg('--start',
+           metavar='<start>',
+           default=0,
+           type=int,
+           help='Starting ID')
+@utils.arg('--end',
+           metavar='<end>',
+           default=0,
+           type=int,
+           help='Ending ID')
+@utils.arg('--purge',
+           dest='purge',
+           metavar='<True|False>',
+           nargs='?',
+           type=bool,
+           default=False,
+           help='Issue purge immediately after delete.')
+def do_volume_delete_range(self, args):
+    """ Delete volumes within given range.
+
+    Builds a sequential list of Volume IDs including <start> through
+    <end>, and deletes any existing volume within that range.
+    """
+    volumes = list(xrange(args.start, args.end + 1))
+    self.volumes.delete(volumes, args.purge)
 
 
 @utils.arg('size',
@@ -124,11 +139,6 @@ def do_volume_delete(self, args):
            metavar='<volume-attributes>',
            help='Attributes to assign to volume.',
            default=None)
-@utils.arg('--chap-secrets',
-           metavar='<chap-secrets>',
-           help='Chap secrets to assign to volume '
-                '(if omitted randomly generated secrets will be used).',
-           default=None)
 @utils.arg('--emulation',
            metavar='<512-emulation>',
            help='Utilize 512 byte emulation.',
@@ -139,12 +149,53 @@ def do_volume_create(self, args):
     options = {'name': args.name,
                'count': args.count,
                'attributes': args.attributes,
-               'chap_secrets': args.chap_secrets,
                'emulation': args.emulation}
     vlist = self.volumes.create(args.size, args.account_id, **options)
     for v in vlist:
         utils.print_dict(v)
 
+#def clone_volume(self, source_volid, name=None,
+#                     new_account_id=None, new_size=None, access=None,
+#                     attributes=None, qos=None, snapshot_id=None):
+@utils.arg('volume',
+           metavar='<volume-id>',
+           default=None,
+           help='Id of the volume to clone.')
+@utils.arg('--name',
+           metavar='<volume-name>',
+           help='Desired name for new volume.',
+           default=None)
+@utils.arg('--count',
+           metavar='<volume-count>',
+           help='Number of volumes to create.',
+           default=1)
+@utils.arg('--account-id',
+           metavar='<account-id>',
+           help='Account to assign ownership of the new volume.',
+           default=None)
+@utils.arg('--attributes',
+           metavar='<volume-attributes>',
+           help='Attributes to assign to volume.',
+           default=None)
+@utils.arg('--emulation',
+           metavar='<512-emulation>',
+           help='Utilize 512 byte emulation.',
+           default=False)
+@utils.arg('--qos',
+           type=str,
+           nargs='*',
+           metavar='<key=value>',
+           help='QoS key=value pairs, minIOPS, maxIOPS and burstIOPS '
+                '(Default=None, use \'--\' to indicate end of args)')
+def do_volume_clone(self, args):
+    qos = {}
+    valid_keys = ['minIOPS', 'maxIOPS', 'burstIOPS']
+    qos = dict(item.split("=") for item in args.qos)
+    for k,v in qos.iteritems():
+        if k not in valid_keys:
+            print("Invalid key received: %s", k)
+            raise Exception
+    print "finish it"
 
 @utils.arg('--keys',
            metavar='<accountID, status, name...>',
@@ -160,8 +211,8 @@ def do_volume_create(self, args):
 def do_account_list(self, args):
     """ List accounts on a cluster."""
 
-    accounts = self.accounts.list(args.sort)
-    key_list = [k for k, v in six.iteritems(accounts[0].__dict__)]
+    accounts = self.accounts.list()
+    key_list = [k for k, v in six.iteritems(accounts[0])]
     utils.print_list(accounts, key_list)
 
 
