@@ -1,17 +1,29 @@
 import json
 import logging
 
+import warnings
 import requests
+from requests.packages.urllib3 import exceptions
 
 LOG = logging.getLogger(__name__)
 
 
+class SolidFireRequestException(Exception):
+    message = "An unknown exception occurred."
+
+    def __init__(self, arg):
+        self.msg = arg
+
+
 class SolidFireAPI(object):
 
+    # def __init__(self, *args, **kwargs):
+    #     super(Volume, self).__init__(*args, **kwargs)
     """The API for controlling a SolidFire cluster."""
-    def __init__(self, endpoint_dict, endpoint_version='6.0'):
-        self.endpoint_dict = endpoint_dict
-        self.endpoint_version = '6.0'
+    # def __init__(self, endpoint_dict, endpoint_version='6.0'):
+    def __init__(self, *args, **kwargs):
+        self.endpoint_dict = kwargs.get('endpoint_dict')
+        self.endpoint_version = kwargs.get('endpoint_version', '7.0')
         self.raw = True
 
     def _send_request(self, method, params, endpoint=None):
@@ -28,12 +40,14 @@ class SolidFireAPI(object):
 
         LOG.debug('Issue SolidFire API call: %s' % json.dumps(payload))
 
-        req = requests.post(url,
-                            data=json.dumps(payload),
-                            auth=(endpoint_dict['login'],
-                                  endpoint_dict['passwd']),
-                            verify=False,
-                            timeout=30)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", exceptions.InsecureRequestWarning)
+            req = requests.post(url,
+                                data=json.dumps(payload),
+                                auth=(endpoint_dict['login'],
+                                      endpoint_dict['passwd']),
+                                verify=False,
+                                timeout=30)
         response = req.json()
         req.close()
         # TODO(jdg): Fix the above, failure cases like wrong password
@@ -43,8 +57,7 @@ class SolidFireAPI(object):
         # TODO(jdg): Add check/retry catch for things where it's appropriate
         if 'error' in response:
             msg = ('API response: %s'), response
-            LOG.error(msg)
-            # raise exception.SolidFireAPIException(msg)
+            raise SolidFireRequestException(msg)
         return response['result']
 
     def clone_volume(self, volume_id, name, new_account_id=None,
@@ -267,6 +280,9 @@ class SolidFireAPI(object):
         params = {"username": username}
         return self._send_request('GetAccountByName', params)
 
+    def get_account_efficiency(self, account_id):
+        return self._send_request('GetAccountEfficiency', {})
+
     def list_accounts(self, start_account_id=None, limit=None):
         """Returns list of accounts, with optional paging support."""
         params = {}
@@ -274,7 +290,25 @@ class SolidFireAPI(object):
             params["startAccountID"] = start_account_id
         if limit is not None:
             params["limit"] = limit
-        return self._send_request('ListAccounts', params)
+        return self._send_request('ListAccounts', params)['accounts']
+
+    def modify_account(self, account_id, status=None,
+                       initiator_secret=None, target_secret=None,
+                       attributes=None):
+        params = {}
+        params['accountID'] = account_id
+        if status:
+            if status in ['active', 'locked']:
+                params['status'] = status
+            else:
+                raise
+        if initiator_secret:
+            params['initiator_secret'] = initiator_secret
+        if target_secret:
+            params['target_secret'] = target_secret
+        if attributes:
+            params['attributes'] = attributes
+        return self._send_request('ModifyAccount', params)
 
     def remove_account(self, account_id):
         """Remove an account from the system.
@@ -286,6 +320,7 @@ class SolidFireAPI(object):
         params = {"accountID": account_id}
         return self._send_request('RemoveAccount', params)
 
+    # ### Cluster admin operations  ####
     def get_cluster_capacity(self):
         """Return the high-level capacity measurements for an entire cluster.
 

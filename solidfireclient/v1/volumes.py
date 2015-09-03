@@ -13,8 +13,12 @@ logging.basicConfig()
 # type(vobs[1]) is dict
 # False
 
+
 class Volume(sfapi.SolidFireAPI):
     """ Volume methods for the SolidFire Cluster. """
+
+    def __init__(self, *args, **kwargs):
+        super(Volume, self).__init__(*args, **kwargs)
 
     def list_attributes(self):
         """
@@ -27,9 +31,9 @@ class Volume(sfapi.SolidFireAPI):
 
         try:
             volumes = self.list_active_volumes()
-        except Exception:
-            # TOOD(jdg): Catch exception and show error info
-            pass
+        except sfapi.SolidFireRequestException as ex:
+            LOG.error(ex.msg)
+            raise ex
         if len(volumes) < 1:
             # TODO(jdg): Raise here as we need at least one vol to interrogate
             # and return an empty list
@@ -52,23 +56,23 @@ class Volume(sfapi.SolidFireAPI):
         if account_id is None:
             try:
                 volumes = self.list_active_volumes(start_id, limit)
-            except Exception:
-                # TOOD(jdg): Catch exception and show error info
-                pass
+            except sfapi.SolidFireRequestException as ex:
+                LOG.error(ex.msg)
+                raise ex
 
         else:
             try:
                 volumes = self.list_volumes_for_account(account_id)
-            except Exception:
-                # TOOD(jdg): Catch exception and show error info
-                pass
+            except sfapi.SolidFireRequestException as ex:
+                LOG.error(ex.msg)
+                raise ex
 
         snapshots = []
         try:
             snapshots = self.list_snapshots()
-        except Exception:
-            # TOOD(jdg): Catch exception and show error info
-            pass
+        except sfapi.SolidFireRequestException as ex:
+            LOG.error(ex.msg)
+            raise ex
 
         if len(volumes) == 0:
             return None
@@ -86,7 +90,7 @@ class Volume(sfapi.SolidFireAPI):
         else:
             return object_utils.convert_dict_to_object(volumes)
 
-    def show(self, volid):
+    def get(self, volid):
         """
         Retrieve details for the specified volume.
 
@@ -98,9 +102,9 @@ class Volume(sfapi.SolidFireAPI):
 
         try:
             response = self.list(volid, 1)
-        except Exception:
-            # TOOD(jdg): Catch exception and show error info
-            pass
+        except sfapi.SolidFireRequestException as ex:
+            LOG.error(ex.msg)
+            raise ex
 
         if len(response) != 1:
             raise Exception
@@ -120,16 +124,16 @@ class Volume(sfapi.SolidFireAPI):
 
         try:
             volumes = self.list_deleted_volumes()
-        except Exception:
-            # TOOD(jdg): Catch exception and show error info
-            pass
+        except sfapi.SolidFireRequestException as ex:
+            LOG.error(ex.msg)
+            raise ex
 
         if self.raw:
             return volumes
         else:
             return object_utils.convert_dict_to_object(volumes)
 
-    def show_deleted(self, volid):
+    def get_deleted(self, volid):
         """
         Retrieve details for the specified deleted volume.
 
@@ -142,9 +146,9 @@ class Volume(sfapi.SolidFireAPI):
 
         try:
             volumes = self.list_deleted_volumes()
-        except Exception:
-            # TOOD(jdg): Catch exception and show error info
-            pass
+        except sfapi.SolidFireRequestException as ex:
+            LOG.error(ex.msg)
+            raise ex
 
         if not any(v['VolumeID'] == volid for v in volumes):
             return None
@@ -161,8 +165,9 @@ class Volume(sfapi.SolidFireAPI):
             self.delete_volume(volid)
             if purge:
                 self.purge_deleted_volume(volid)
-        except Exception:
-            pass
+        except sfapi.SolidFireRequestException as ex:
+            LOG.error(ex.msg)
+            raise ex
         return None
 
     def delete_all(self, purge):
@@ -218,11 +223,17 @@ class Volume(sfapi.SolidFireAPI):
             params['qos'] = qos
         if chap_secrets:
             params['chap_secrets'] = chap_secrets
-
         for i in xrange(0, int(count)):
-            response = self.create_volume(name, account_id,
-                                          int(size) * pow(10, 9),
-                                          enable512e, qos, attributes)
+            vname = name
+            if i > 0:
+                vname = name + "-" + str(i)
+            try:
+                response = self.create_volume(vname, account_id,
+                                              int(size) * pow(10, 9),
+                                              enable512e, qos, attributes)
+            except sfapi.SolidFireRequestException as ex:
+                LOG.error(ex.msg)
+                raise ex
             volid_list.append(response['volumeID'])
             if name is not None:
                 params['name'] = params['name'] + ('-%s' % i)
@@ -253,23 +264,21 @@ class Volume(sfapi.SolidFireAPI):
           * Optional keywords default to copying values from source
 
         """
-        if access and access not in ['readOnly', 'readWrite',
-                                     'locked', 'replicationTarget']:
-                raise
-
-        response = self.clone_volume(source_volid, name, new_account_id,
+        try:
+            return self.clone_volume(source_volid, name, new_account_id,
                                      int(new_size) * pow(10, 9), access,
-                                     snapshot_id, attributes)
-
-        return(self.show(response['volumeID']))
+                                     snapshot_id, attributes)['volumeID']
+        except sfapi.SolidFireRequestException as ex:
+            LOG.error(ex.msg)
+            raise ex
 
     def list_snaps(self, volume_id=None):
 
         try:
             snapshots = self.list_snapshots(volume_id)
-        except:
-            # TODO(jdg): Catch key not found
-            pass
+        except sfapi.SolidFireRequestException as ex:
+            LOG.error(ex.msg)
+            raise ex
         if self.raw:
             return snapshots
         else:

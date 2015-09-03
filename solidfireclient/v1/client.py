@@ -2,6 +2,7 @@ import logging
 
 from solidfireclient.v1 import solidfire_element_api
 from solidfireclient.v1 import volumes
+from solidfireclient.v1 import accounts
 
 LOG = logging.getLogger(__name__)
 
@@ -16,7 +17,7 @@ class Client(object):
         self.use_ssl = False
         self.verify_ssl = False
         self.verbose = False
-        self.solidfire_enpdoint_version = 6
+        self.endpoint_version = 7
         self.endpoint_dict = self._build_endpoint_dict()
 
         # TODO(jdg): Collapse the instantiation and the
@@ -25,9 +26,13 @@ class Client(object):
         self.volumes.endpoint_dict = self.endpoint_dict
         self.volumes.debug = kwargs.get('debug', False)
 
+        self.accounts = accounts.Account(self)
+        self.accounts.endpoint_dict = self.endpoint_dict
+        self.accounts.debug = kwargs.get('debug', False)
+
         self.cluster = solidfire_element_api.SolidFireAPI(self)
-        self.cluster.endpoint_dict = self.endpoint_dict
-        self.cluster.debug = kwargs.get('debug', False)
+        # self.cluster.endpoint_dict = self.endpoint_dict
+        # self.cluster.debug = kwargs.get('debug', False)
 
     def _build_endpoint_dict(self, **kwargs):
         endpoint = {}

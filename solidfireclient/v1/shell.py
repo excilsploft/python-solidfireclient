@@ -65,10 +65,38 @@ def do_volume_list(self, args):
     else:
         vols = self.volumes.list()
     if args.verbose:
-        key_list = [k for k, v in six.iteritems(vols[0].__dict__)]
+        key_list = [k for k, v in six.iteritems(vols[0])]
     else:
         key_list = args.keys.split(',')
     utils.print_list(vols, key_list)
+
+
+@utils.arg('volume', metavar='<volume>', help='Volume ID.')
+@utils.arg('--name',
+           default=None,
+           help='Name for the new volume (1-64 chars)')
+@utils.arg('account',
+           default=None,
+           help='Account ID to associate new volume with.')
+@utils.arg('size',
+           default=None,
+           help='Size of the new volume (may be greater than original).')
+@utils.arg('access',
+           metavar='<readOnly|readWrite|locked|replicationTarget>',
+           default='readWrite',
+           help='Access setting for cloned volume.')
+@utils.arg('attributes',
+           default=None,
+           help='Attributes to associate with the new clone.')
+@utils.arg('snapshot',
+           default=None,
+           help='Snaphot ID to use as the source of the clone.')
+def do_volume_clone(self, args):
+    volid = self.volumes.clone(args.volume, args.name, args.size,
+                               args.access, args.attributes, args.qos,
+                               args.snapshot_id)
+    vol = self.do_volume_show(volid)
+    utils.print_dict(vol)
 
 
 @utils.arg('volume', metavar='<volume>', help='Volume ID.')
@@ -78,30 +106,22 @@ def do_volume_show(self, args):
     utils.print_dict(vol)
 
 
-@utils.arg('volume', metavar='<volume>', help='Volume ID.')
+@utils.arg('volume',
+           metavar='<volume>',
+           nargs='+',
+           help='Volume ID of the volume(s) to delete(.')
 @utils.arg('--purge',
            dest='purge',
-           metavar='<0|1>',
+           metavar='<True|False>',
            nargs='?',
-           type=int,
-           const=1,
-           default=0,
+           type=bool,
+           default=False,
            help='Issue purge immediately after delete.')
-@utils.arg('--all',
-           dest='all',
-           metavar='<0|1>',
-           nargs='?',
-           type=int,
-           const=1,
-           default=0,
-           help='Deletes all volumes on the cluster *DANGER*.')
 def do_volume_delete(self, args):
     """ Helper method to delete volumes on a SolidFire Cluster.
     """
-    if args.volume:
-        self.volumes.delete(args.volume, args.purge)
-    else:
-        self.volumes.delete_all(args.purge)
+    for v in args.volume:
+        self.volumes.delete(v, args.purge)
 
 
 @utils.arg('size',
@@ -124,25 +144,21 @@ def do_volume_delete(self, args):
            metavar='<volume-attributes>',
            help='Attributes to assign to volume.',
            default=None)
-@utils.arg('--chap-secrets',
-           metavar='<chap-secrets>',
-           help='Chap secrets to assign to volume '
-                '(if omitted randomly generated secrets will be used).',
-           default=None)
 @utils.arg('--emulation',
            metavar='<512-emulation>',
            help='Utilize 512 byte emulation.',
-           default=False)
+           default=True)
 def do_volume_create(self, args):
     """ Helper method to create a volume on a SolidFire Cluster."""
 
     options = {'name': args.name,
                'count': args.count,
                'attributes': args.attributes,
-               'chap_secrets': args.chap_secrets,
                'emulation': args.emulation}
     vlist = self.volumes.create(args.size, args.account_id, **options)
     for v in vlist:
+        del v['qos']['curve']
+        del v['qos']['burstTime']
         utils.print_dict(v)
 
 
@@ -160,9 +176,30 @@ def do_volume_create(self, args):
 def do_account_list(self, args):
     """ List accounts on a cluster."""
 
-    accounts = self.accounts.list(args.sort)
-    key_list = [k for k, v in six.iteritems(accounts[0].__dict__)]
+    accounts = self.accounts.list()
+    key_list = [k for k, v in six.iteritems(accounts[0])]
     utils.print_list(accounts, key_list)
+
+
+@utils.arg('name',
+           metavar='<account-name>',
+           default=None,
+           help='Name to assign to the newly created account.')
+@utils.arg('--initiator-secret',
+           metavar='<initiator-secret>',
+           default=None,
+           help='Initiator Secret (CHAP) to use for new account.')
+@utils.arg('--target-secret',
+           metavar='<target-secret>',
+           default=None,
+           help='Target Secret (CHAP) to use for new account.')
+@utils.arg('--attributes',
+           metavar='<account-attributes>',
+           default=None,
+           help='Attributes to assign to account.')
+def do_account_create(self, args):
+    account_id = self.accounts.create(args.name)
+    self.do_account_get(account_id)
 
 
 def do_account_attributes(self, args):
@@ -170,3 +207,48 @@ def do_account_attributes(self, args):
     attributes = self.accounts.list_attributes()
     attrs = [{'AccountAttribute': val} for val in attributes]
     utils.print_list(attrs, ['AccountAttribute'])
+
+
+@utils.arg('acctid',
+           metavar='<account-id>',
+           default=None,
+           help='ID of the account to retrieve.')
+def do_account_get(self, args):
+    """ Account get."""
+    account = self.accounts.get(args.acctid)
+    utils.print_dict(account)
+
+
+@utils.arg('name',
+           metavar='<name>',
+           default=None,
+           help='Name of the account to retrieve.')
+def do_account_get_by_name(self, args):
+    """ Account get."""
+    account = self.accounts.get_by_name(args.name)
+    utils.print_dict(account)
+
+
+@utils.arg('acctid',
+           metavar='<account-id>',
+           default=None,
+           help='ID of the account to modify.')
+@utils.arg('--status',
+           metavar='<active|locked>',
+           default=None,
+           help='New status, either active OR locked.')
+@utils.arg('--initiator_secret',
+           default=None,
+           help='Initiator Secret (CHAP) to use for new account.')
+@utils.arg('--target_secret',
+           default=None,
+           help='Target Secret (CHAP) to use for new account.')
+@utils.arg('--attributes',
+           metavar='<account-attributes>',
+           default=None,
+           help='Attributes to assign to account.')
+def do_account_modify(self, args):
+    account = self.accounts.modify(args.acctid, args.status,
+                                   args.initiator_secret, args.target_secret)
+    account = self.accounts.get(args.acctid)
+    utils.print_dict(account)
