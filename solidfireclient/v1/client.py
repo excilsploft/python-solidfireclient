@@ -1,5 +1,6 @@
 import logging
 
+from solidfireclient.v1 import solidfire_element_api
 from solidfireclient.v1 import volumes
 from solidfireclient.v1 import accounts
 
@@ -19,8 +20,11 @@ class Client(object):
         self.endpoint_version = 7
         self.endpoint_dict = self._build_endpoint_dict()
 
-        self.volumes = volumes.Volume(self.endpoint_dict, self.endpoint_version)
-        self.accounts = accounts.Account(self.endpoint_dict, self.endpoint_version)
+        # TODO(jdg): Collapse the instantiation and the
+        # setting of endpoint_dict var into a single call
+        self.volumes = volumes.Volume(self)
+        self.volumes.endpoint_dict = self.endpoint_dict
+        self.volumes.debug = kwargs.get('debug', False)
 
         self.accounts = accounts.Account(self)
         self.accounts.endpoint_dict = self.endpoint_dict
