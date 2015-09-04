@@ -153,14 +153,15 @@ class Volume(sfapi.SolidFireAPI):
         if not any(v['VolumeID'] == volid for v in volumes):
             return None
 
-    def delete(self, volid, purge):
+    def delete(self, ids, purge):
         """
         Delete the specified volume from the SolidFire Cluster.
 
-        param id: The VolumeID of the volume to be deleted
+        param ids: List of Volume ID's to delete
         param purge: True or False, issues purge immediately after delete
         """
 
+<<<<<<< HEAD
         try:
             self.delete_volume(volid)
             if purge:
@@ -168,6 +169,15 @@ class Volume(sfapi.SolidFireAPI):
         except sfapi.SolidFireRequestException as ex:
             LOG.error(ex.msg)
             raise ex
+=======
+        for i in ids:
+            try:
+                self.delete_volume(i)
+                if purge:
+                    self.purge_deleted_volume(i)
+            except Exception:
+                pass
+>>>>>>> 5293e4837e21ae09871c5607582cbcc2748f8b7b
         return None
 
     def delete_all(self, purge):
@@ -205,9 +215,9 @@ class Volume(sfapi.SolidFireAPI):
         name = kwargs.get('name', None)
         count = kwargs.get('count', 1)
         attributes = kwargs.get('attributes', {})
-        chap_secrets = kwargs.get('chap_secrets', None)
         enable512e = kwargs.get('emulation', False)
         qos = kwargs.get('qos', {})
+<<<<<<< HEAD
         params = {'name': name,
                   'accountID': account_id,
                   'totalSize': int(size) * pow(10, 9),
@@ -234,9 +244,17 @@ class Volume(sfapi.SolidFireAPI):
             except sfapi.SolidFireRequestException as ex:
                 LOG.error(ex.msg)
                 raise ex
+=======
+
+        vname = name
+        for i in xrange(0, int(count)):
+            if name is not None and i > 0:
+                vname = name + ('-%s' % i)
+            response = self.create_volume(vname, account_id,
+                                          int(size) * pow(10, 9),
+                                          enable512e, qos, attributes)
+>>>>>>> 5293e4837e21ae09871c5607582cbcc2748f8b7b
             volid_list.append(response['volumeID'])
-            if name is not None:
-                params['name'] = params['name'] + ('-%s' % i)
 
         vlist = []
         for id in volid_list:

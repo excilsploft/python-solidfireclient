@@ -17,6 +17,27 @@ logging.basicConfig()
 class Account(sfapi.SolidFireAPI):
     """ Account methods for the SolidFire Cluster. """
 
+    def list_attributes(self):
+        """
+        Display a list of valid account attributes.
+
+        Note, this works by grabbing an account object from the Cluster
+        and iterating through its attributes and displaying the key
+        names.  This requires that an active account exist on the system.
+        """
+
+        try:
+            accounts = self.list_accounts()
+        except Exception:
+            # TOOD(jdg): Catch exception and show error info
+            pass
+        if len(accounts) < 1:
+            # TODO(jdg): Raise here as we need at least one vol to interrogate
+            # and return an empty list
+            raise Exception
+
+        return [k for k, v in six.iteritems(accounts[0])]
+
     def create(self, username, initiator_secret=None,
                target_secret=None, attributes=None, **kwargs):
         """

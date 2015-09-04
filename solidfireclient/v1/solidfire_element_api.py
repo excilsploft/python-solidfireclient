@@ -4,6 +4,10 @@ import logging
 import warnings
 import requests
 from requests.packages.urllib3 import exceptions
+<<<<<<< HEAD
+=======
+import warnings
+>>>>>>> 5293e4837e21ae09871c5607582cbcc2748f8b7b
 
 LOG = logging.getLogger(__name__)
 
@@ -20,10 +24,16 @@ class SolidFireAPI(object):
     # def __init__(self, *args, **kwargs):
     #     super(Volume, self).__init__(*args, **kwargs)
     """The API for controlling a SolidFire cluster."""
+<<<<<<< HEAD
     # def __init__(self, endpoint_dict, endpoint_version='6.0'):
     def __init__(self, *args, **kwargs):
         self.endpoint_dict = kwargs.get('endpoint_dict')
         self.endpoint_version = kwargs.get('endpoint_version', '7.0')
+=======
+    def __init__(self, endpoint_dict, endpoint_version='6.0'):
+        self.endpoint_dict = endpoint_dict
+        self.endpoint_version = endpoint_version
+>>>>>>> 5293e4837e21ae09871c5607582cbcc2748f8b7b
         self.raw = True
 
     def _send_request(self, method, params, endpoint=None):
@@ -48,6 +58,10 @@ class SolidFireAPI(object):
                                       endpoint_dict['passwd']),
                                 verify=False,
                                 timeout=30)
+<<<<<<< HEAD
+=======
+
+>>>>>>> 5293e4837e21ae09871c5607582cbcc2748f8b7b
         response = req.json()
         req.close()
         # TODO(jdg): Fix the above, failure cases like wrong password
@@ -291,6 +305,7 @@ class SolidFireAPI(object):
         if limit is not None:
             params["limit"] = limit
         return self._send_request('ListAccounts', params)['accounts']
+<<<<<<< HEAD
 
     def modify_account(self, account_id, status=None,
                        initiator_secret=None, target_secret=None,
@@ -309,6 +324,8 @@ class SolidFireAPI(object):
         if attributes:
             params['attributes'] = attributes
         return self._send_request('ModifyAccount', params)
+=======
+>>>>>>> 5293e4837e21ae09871c5607582cbcc2748f8b7b
 
     def remove_account(self, account_id):
         """Remove an account from the system.
