@@ -253,6 +253,7 @@ def do_account_list(self, args):
            default=None,
            help='Attributes to assign to account.')
 def do_account_create(self, args):
+    """ Create a new account on the SolidFire cluster."""
     account_id = self.accounts.create(args.name)
     self.do_account_get(account_id)
 
@@ -269,7 +270,7 @@ def do_account_attributes(self, args):
            default=None,
            help='ID of the account to retrieve.')
 def do_account_get(self, args):
-    """ Account get."""
+    """ Get solidfire account by ID."""
     account = self.accounts.get(args.acctid)
     utils.print_dict(account)
 
@@ -279,7 +280,7 @@ def do_account_get(self, args):
            default=None,
            help='Name of the account to retrieve.')
 def do_account_get_by_name(self, args):
-    """ Account get."""
+    """ Get SolidFire account by name."""
     account = self.accounts.get_by_name(args.name)
     utils.print_dict(account)
 
@@ -303,6 +304,7 @@ def do_account_get_by_name(self, args):
            default=None,
            help='Attributes to assign to account.')
 def do_account_modify(self, args):
+    """ Modify the specified SolidFire Account."""
     account = self.accounts.modify(args.acctid, args.status,
                                    args.initiator_secret, args.target_secret)
     account = self.accounts.get(args.acctid)
