@@ -7,15 +7,13 @@ from solidfireclient.v1 import object_utils
 LOG = logging.getLogger(__name__)
 logging.basicConfig()
 
-# Handy:
-# type(volumes[1]) is dict
-# True
-# type(vobs[1]) is dict
-# False
-
 
 class Account(sfapi.SolidFireAPI):
     """ Account methods for the SolidFire Cluster. """
+
+    def __init__(self, sfapi):
+        super(Account, self).__init__(sfapi)
+        self.sfapi = sfapi
 
     def list_attributes(self):
         """
@@ -27,7 +25,7 @@ class Account(sfapi.SolidFireAPI):
         """
 
         try:
-            accounts = self.list_accounts()
+            accounts = self.sfapi.list_accounts()
         except Exception:
             # TOOD(jdg): Catch exception and show error info
             pass
@@ -59,7 +57,7 @@ class Account(sfapi.SolidFireAPI):
 
         """
         try:
-            response = self.add_account()
+            response = self.sfapi.add_account()
         except sfapi.SolidFireRequestException as ex:
             LOG.error(ex.msg)
             raise ex
@@ -72,7 +70,7 @@ class Account(sfapi.SolidFireAPI):
         """
 
         try:
-            accounts = self.list_accounts()
+            accounts = self.sfapi.list_accounts()
         except sfapi.SolidFireRequestException as ex:
             LOG.error(ex.msg)
             raise ex
@@ -92,7 +90,7 @@ class Account(sfapi.SolidFireAPI):
         """
         account = None
         try:
-            account = self.get_account_by_id(account_id)['account']
+            account = self.sfapi.get_account_by_id(account_id)['account']
         except sfapi.SolidFireRequestException as ex:
             LOG.error(ex.msg)
             raise ex
@@ -110,7 +108,7 @@ class Account(sfapi.SolidFireAPI):
         """
 
         try:
-            account = self.get_account_by_name(account_name)['account']
+            account = self.sfapi.get_account_by_name(account_name)['account']
         except sfapi.SolidFireRequestException as ex:
             LOG.error(ex.msg)
             raise ex
@@ -124,8 +122,8 @@ class Account(sfapi.SolidFireAPI):
                target_secret=None, attributes=None):
         account_id = None
         try:
-            self.modify_account(account_id, status, initiator_secret,
-                                target_secret, attributes)
+            self.sfapi.modify_account(account_id, status, initiator_secret,
+                                      target_secret, attributes)
         except sfapi.SolidFireRequestException as ex:
             LOG.error(ex.msg)
             raise ex

@@ -4,7 +4,6 @@ import logging
 import warnings
 import requests
 from requests.packages.urllib3 import exceptions
-import warnings
 
 LOG = logging.getLogger(__name__)
 

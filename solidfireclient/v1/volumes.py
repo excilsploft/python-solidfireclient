@@ -17,8 +17,9 @@ logging.basicConfig()
 class Volume(sfapi.SolidFireAPI):
     """ Volume methods for the SolidFire Cluster. """
 
-    def __init__(self, *args, **kwargs):
-        super(Volume, self).__init__(*args, **kwargs)
+    def __init__(self, sfapi):
+        super(Volume, self).__init__(sfapi)
+        self.sfapi = sfapi
 
     def list_attributes(self):
         """
@@ -30,7 +31,7 @@ class Volume(sfapi.SolidFireAPI):
         """
 
         try:
-            volumes = self.list_active_volumes()
+            volumes = self.sfapi.list_active_volumes()
         except sfapi.SolidFireRequestException as ex:
             LOG.error(ex.msg)
             raise ex
@@ -55,21 +56,21 @@ class Volume(sfapi.SolidFireAPI):
 
         if account_id is None:
             try:
-                volumes = self.list_active_volumes(start_id, limit)
+                volumes = self.sfapi.list_active_volumes(start_id, limit)
             except sfapi.SolidFireRequestException as ex:
                 LOG.error(ex.msg)
                 raise ex
 
         else:
             try:
-                volumes = self.list_volumes_for_account(account_id)
+                volumes = self.sfapi.list_volumes_for_account(account_id)
             except sfapi.SolidFireRequestException as ex:
                 LOG.error(ex.msg)
                 raise ex
 
         snapshots = []
         try:
-            snapshots = self.list_snapshots()
+            snapshots = self.sfapi.list_snapshots()
         except sfapi.SolidFireRequestException as ex:
             LOG.error(ex.msg)
             raise ex
@@ -123,7 +124,7 @@ class Volume(sfapi.SolidFireAPI):
         volumes = []
 
         try:
-            volumes = self.list_deleted_volumes()
+            volumes = self.sfapi.list_deleted_volumes()
         except sfapi.SolidFireRequestException as ex:
             LOG.error(ex.msg)
             raise ex
@@ -145,7 +146,7 @@ class Volume(sfapi.SolidFireAPI):
         volumes = []
 
         try:
-            volumes = self.list_deleted_volumes()
+            volumes = self.sfapi.list_deleted_volumes()
         except sfapi.SolidFireRequestException as ex:
             LOG.error(ex.msg)
             raise ex
@@ -162,7 +163,7 @@ class Volume(sfapi.SolidFireAPI):
         """
         for i in ids:
             try:
-                self.delete_volume(i)
+                self.sfapi.delete_volume(i)
                 if purge:
                     self.purge_deleted_volume(i)
             except sfapi.SolidFireRequestException as ex:
@@ -178,11 +179,11 @@ class Volume(sfapi.SolidFireAPI):
         """
         vlist = self.list()
         for v in vlist:
-            self.delete(v.volumeID)
+            self.sfapi.delete(v.volumeID)
         if purge:
-            dlist = self.list_deleted()
+            dlist = self.sfapi.list_deleted()
             for v in dlist:
-                self.purge_deleted_volume(v.volumeID)
+                self.sfapi.purge_deleted_volume(v.volumeID)
 
     def create(self, size, account_id, **kwargs):
         """
@@ -195,7 +196,6 @@ class Volume(sfapi.SolidFireAPI):
           name: Name of cloned volume (limited to 64 characters, default=None)
           count: Create multiple volumes with these settings
           attributes: Dict containting Key Value pairs (extra metadata)
-          chap_secrets: Chap credentials to assign to volume
           emulation: Set equal to True to enable 512 byte emulation
           qos: Dict containing Key Value pairs to indicate QoS setings
 
@@ -219,16 +219,15 @@ class Volume(sfapi.SolidFireAPI):
             params['attributes'] = attributes
         if qos:
             params['qos'] = qos
-        if chap_secrets:
-            params['chap_secrets'] = chap_secrets
         for i in xrange(0, int(count)):
             vname = name
             if i > 0:
                 vname = name + "-" + str(i)
             try:
-                response = self.create_volume(vname, account_id,
-                                              int(size) * pow(10, 9),
-                                              enable512e, qos, attributes)
+                response = self.sfapi.create_volume(
+                    vname, account_id,
+                    int(size) * pow(10, 9),
+                    enable512e, qos, attributes)
             except sfapi.SolidFireRequestException as ex:
                 LOG.error(ex.msg)
                 raise ex
@@ -237,9 +236,10 @@ class Volume(sfapi.SolidFireAPI):
         for i in xrange(0, int(count)):
             if name is not None and i > 0:
                 vname = name + ('-%s' % i)
-            response = self.create_volume(vname, account_id,
-                                          int(size) * pow(10, 9),
-                                          enable512e, qos, attributes)
+            response = self.sfapi.create_volume(
+                vname, account_id,
+                int(size) * pow(10, 9),
+                enable512e, qos, attributes)
             volid_list.append(response['volumeID'])
 
         vlist = []
@@ -269,9 +269,10 @@ class Volume(sfapi.SolidFireAPI):
 
         """
         try:
-            return self.clone_volume(source_volid, name, new_account_id,
-                                     int(new_size) * pow(10, 9), access,
-                                     snapshot_id, attributes)['volumeID']
+            return self.sfapi.clone_volume(
+                source_volid, name, new_account_id,
+                int(new_size) * pow(10, 9), access,
+                snapshot_id, attributes)['volumeID']
         except sfapi.SolidFireRequestException as ex:
             LOG.error(ex.msg)
             raise ex
@@ -279,7 +280,7 @@ class Volume(sfapi.SolidFireAPI):
     def list_snaps(self, volume_id=None):
 
         try:
-            snapshots = self.list_snapshots(volume_id)
+            snapshots = self.sfapi.list_snapshots(volume_id)
         except sfapi.SolidFireRequestException as ex:
             LOG.error(ex.msg)
             raise ex

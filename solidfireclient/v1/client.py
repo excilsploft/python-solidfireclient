@@ -19,18 +19,12 @@ class Client(object):
         self.verbose = False
         self.endpoint_version = 7
         self.endpoint_dict = self._build_endpoint_dict()
+        sfapi = solidfire_element_api.SolidFireAPI(
+            endpoint_dict=self.endpoint_dict)
+        self.volumes = volumes.Volume(sfapi)
+        self.accounts = accounts.Account(sfapi)
 
-        # TODO(jdg): Collapse the instantiation and the
-        # setting of endpoint_dict var into a single call
-        self.volumes = volumes.Volume(self)
-        self.volumes.endpoint_dict = self.endpoint_dict
-        self.volumes.debug = kwargs.get('debug', False)
-
-        self.accounts = accounts.Account(self)
-        self.accounts.endpoint_dict = self.endpoint_dict
-        self.accounts.debug = kwargs.get('debug', False)
-
-        self.cluster = solidfire_element_api.SolidFireAPI(self)
+        # self.cluster = solidfire_element_api.SolidFireAPI(self)
         # self.cluster.endpoint_dict = self.endpoint_dict
         # self.cluster.debug = kwargs.get('debug', False)
 
