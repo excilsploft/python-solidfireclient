@@ -151,7 +151,11 @@ class SolidFireShell(object):
             logging.basicConfig(
                 format="%(levelname)s (%(module)s:%(lineno)d) %(message)s",
                 level=logging.DEBUG)
-            httplib2.debuglevel = 1
+        else:
+            logging.basicConfig(
+                format="%(levelname)s (%(module)s:%(lineno)d) %(message)s",
+                level=logging.INFO)
+            logging.getLogger("requests").setLevel(logging.WARNING)
 
     def main(self, argv):
         parser = self.get_base_parser()
