@@ -1,8 +1,9 @@
 import logging
 
+from solidfireclient.v1 import accounts
+from solidfireclient.v1 import cluster
 from solidfireclient.v1 import solidfire_element_api
 from solidfireclient.v1 import volumes
-from solidfireclient.v1 import accounts
 
 LOG = logging.getLogger(__name__)
 
@@ -23,6 +24,7 @@ class Client(object):
             endpoint_dict=self.endpoint_dict)
         self.volumes = volumes.Volume(sfapi)
         self.accounts = accounts.Account(sfapi)
+        self.cluster = cluster.Cluster(sfapi)
 
         # self.cluster = solidfire_element_api.SolidFireAPI(self)
         # self.cluster.endpoint_dict = self.endpoint_dict

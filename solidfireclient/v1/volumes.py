@@ -7,12 +7,6 @@ from solidfireclient.v1 import object_utils
 LOG = logging.getLogger(__name__)
 logging.basicConfig()
 
-# Handy:
-# type(volumes[1]) is dict
-# True
-# type(vobs[1]) is dict
-# False
-
 
 class Volume(sfapi.SolidFireAPI):
     """ Volume methods for the SolidFire Cluster. """

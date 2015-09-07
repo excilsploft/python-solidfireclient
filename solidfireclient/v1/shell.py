@@ -309,3 +309,61 @@ def do_account_modify(self, args):
                                    args.initiator_secret, args.target_secret)
     account = self.accounts.get(args.acctid)
     utils.print_dict(account)
+
+
+def do_cluster_capacity(self, args):
+    """ Get cluster capacity info."""
+    # TODO(jdg): Add an option to display bytes in Gig
+    capacity_info = self.cluster.get_capacity()
+    utils.print_dict(capacity_info)
+
+
+def do_cluster_version(self, args):
+    """ Get version information for the cluster."""
+    version_info = self.cluster.get_version()
+    details = version_info.pop('clusterVersionInfo', None)
+    utils.print_dict(version_info)
+    for item in details:
+        utils.print_dict(item)
+
+    utils.print_dict(version_info)
+
+
+def do_cluster_limits(self, args):
+    """ List current API limits for the cluster."""
+    limits = self.cluster.get_limits()
+    utils.print_dict(limits)
+
+
+def do_cluster_list_services(self, args):
+    """ List services for the cluster."""
+    services = self.cluster.list_services()['services']
+
+    # BUG!!!!
+    # FIXME(jdg): This isn't parsed correctly
+    # we're duplicating node/drive entries, need to
+    # come up with better parsing here
+    print ("DRIVE INFO")
+    drives = [item.get('drive', None) for item in services]
+    key_list = [k for k, v in six.iteritems(drives[0])]
+    utils.print_list(drives, key_list)
+
+    print ("\nNODE INFO")
+    nodes = [item.get('node', None) for item in services]
+    key_list = [k for k, v in six.iteritems(nodes[0])]
+    utils.print_list(nodes, key_list)
+
+    print ("\nSERVICE INFO")
+    servcs = [item.get('service', None) for item in services]
+    key_list = [k for k, v in six.iteritems(servcs[0])]
+    utils.print_list(servcs, key_list)
+
+
+@utils.arg('handle_id',
+           metavar='<async-handle-id>',
+           default=None,
+           help='Get the status of the specificed async process.')
+def do_cluster_get_async_result(self, args):
+    """ Retrieve the status of an async method call."""
+    status = self.cluster.get_async_result(args.handle_id)
+    utils.print_dict(status)
