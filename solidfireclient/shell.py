@@ -19,7 +19,6 @@ Command-line interface to the SolidFire API.
 from __future__ import print_function
 
 import argparse
-import httplib2
 import logging
 import sys
 

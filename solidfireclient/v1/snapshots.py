@@ -5,18 +5,18 @@ class Snapshot(sfapi.SolidFireAPI):
 
     def _list_active_snapshots(self, start_id=0, limit=0):
         return self._send_request('ListSnapshots',
-                                      {},
-                                      endpoint=None)
+                                  {},
+                                  endpoint=None)
 
     def _list_deleted_volumes(self):
         return self._send_request('ListDeletedVolumes',
-                                      {},
-                                      endpoint=None)
+                                  {},
+                                  endpoint=None)
 
     def _list_volumes_for_account(self, account_id):
         return self._send_request('ListVolumesForAccount',
-                                      {'accountID': account_id},
-                                      endpoint=None)
+                                  {'accountID': account_id},
+                                  endpoint=None)
 
     def _filter_response(self, filter):
         pass
@@ -33,14 +33,13 @@ class Snapshot(sfapi.SolidFireAPI):
             volid: Retrieve only those snapshots associated
                    with this volume ID
         """
-        slist = []
         params = {}
         if volid:
             params['voumeID'] = int(volid)
 
         response = self._send_request('ListSnapshots',
-                                          params,
-                                          endpoint=None)
+                                      params,
+                                      endpoint=None)
 
         # snapshots = [s for s in response['result']['snapshots']]
         snapshots = response['snapshots']
@@ -67,8 +66,8 @@ class Snapshot(sfapi.SolidFireAPI):
         volumes = [{'volumeID': int(id)} for id in volid_list]
         params = {'volumes': volumes}
         response = self._send_request('ListSnapshots',
-                                          params,
-                                          endpoint=None)
+                                      params,
+                                      endpoint=None)
 
         # TODO(jdg): Might want to sort these in the future?
         return [s for s in response['result']['groupSnapshots']]
@@ -82,13 +81,13 @@ class Snapshot(sfapi.SolidFireAPI):
         """
 
         params = {'volumeID': id}
-        response = self._send_request('DeleteVolume',
-                                          params,
-                                          endpoint=None)
+        self._send_request('DeleteVolume',
+                           params,
+                           endpoint=None)
         if purge:
-            response = self._send_request('PurgeDeletedVolume',
-                                              params,
-                                              endpoint=None)
+            self._send_request('PurgeDeletedVolume',
+                               params,
+                               endpoint=None)
 
     def create(self, volid,
                name=None, snapshot_id=None,
@@ -114,6 +113,6 @@ class Snapshot(sfapi.SolidFireAPI):
             params['attributes'] = attributes
 
         response = self._send_request('CreateSnapshot',
-                                          params,
-                                          endpoint=None)
+                                      params,
+                                      endpoint=None)
         return self.show(response['result']['snapshotID'])
