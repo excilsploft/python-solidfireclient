@@ -59,7 +59,7 @@ class Account(sfapi.SolidFireAPI):
         try:
             response = self.sfapi.add_account()
         except sfapi.SolidFireRequestException as ex:
-            LOG.error(ex.msg)
+            LOG.error(ex.msg[1]['error']['message'])
             raise ex
         return response['accountID']
 
@@ -72,7 +72,7 @@ class Account(sfapi.SolidFireAPI):
         try:
             accounts = self.sfapi.list_accounts()
         except sfapi.SolidFireRequestException as ex:
-            LOG.error(ex.msg)
+            LOG.error(ex.msg[1]['error']['message'])
             raise ex
 
         accounts = sorted((accounts),
@@ -92,7 +92,7 @@ class Account(sfapi.SolidFireAPI):
         try:
             account = self.sfapi.get_account_by_id(account_id)['account']
         except sfapi.SolidFireRequestException as ex:
-            LOG.error(ex.msg)
+            LOG.error(ex.msg[1]['error']['message'])
             raise ex
 
         if self.raw:
@@ -110,7 +110,7 @@ class Account(sfapi.SolidFireAPI):
         try:
             account = self.sfapi.get_account_by_name(account_name)['account']
         except sfapi.SolidFireRequestException as ex:
-            LOG.error(ex.msg)
+            LOG.error(ex.msg[1]['error']['message'])
             raise ex
 
         if self.raw:
@@ -125,7 +125,32 @@ class Account(sfapi.SolidFireAPI):
             self.sfapi.modify_account(account_id, status, initiator_secret,
                                       target_secret, attributes)
         except sfapi.SolidFireRequestException as ex:
-            LOG.error(ex.msg)
+            LOG.error(ex.msg[1]['error']['message'])
             raise ex
 
         return
+
+    def delete(self, ids):
+        """
+        Delete the specified account(s) from the SolidFire Cluster.
+
+        param ids: List of Account ID's to delete
+        """
+        for i in ids:
+            try:
+                self.sfapi.remove_account(i)
+            except sfapi.SolidFireRequestException as ex:
+                LOG.error(ex.msg[1]['error']['message'])
+                raise ex
+        return None
+
+    def delete_all(self):
+        """
+        Delete all account on the SolidFire Cluster.
+        """
+        account_list = self.list()
+        for a in account_list:
+            try:
+                self.sfapi.remove_account(a['accountID'])
+            except sfapi.SolidFireRequestException as ex:
+                LOG.error(ex.msg[1]['error']['message'])

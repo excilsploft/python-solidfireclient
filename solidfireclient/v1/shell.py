@@ -278,6 +278,20 @@ def do_account_modify(self, args):
     utils.print_dict(account)
 
 
+@utils.arg('accounts',
+           metavar='<acctids>',
+           nargs='+',
+           default=[],
+           help='List of Account IDs to delete (ALL delete all accounts '
+                'that do not have Volumes assigned to them).')
+def do_account_delete(self, args):
+    """ Helper method to delete accounts on a SolidFire Cluster."""
+    if 'ALL' in args.accounts:
+        self.accounts.delete_all()
+    else:
+        self.accounts.delete(args.accounts)
+
+
 def do_cluster_capacity(self, args):
     """ Get cluster capacity info."""
     # TODO(jdg): Add an option to display bytes in Gig
