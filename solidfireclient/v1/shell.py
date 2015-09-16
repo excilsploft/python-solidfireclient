@@ -65,11 +65,12 @@ def do_volume_list(self, args):
     else:
         vols = self.volumes.list()
 
-    if args.verbose:
-        key_list = [k for k, v in six.iteritems(vols[0])]
-    else:
-        key_list = args.keys.split(',')
-    utils.print_list(vols, key_list)
+    if vols:
+        if args.verbose:
+            key_list = [k for k, v in six.iteritems(vols[0])]
+        else:
+            key_list = args.keys.split(',')
+        utils.print_list(vols, key_list)
 
 
 @utils.arg('volume', metavar='<volume>', help='Volume ID.')
@@ -110,7 +111,8 @@ def do_volume_show(self, args):
 @utils.arg('volumes',
            metavar='<volids>',
            nargs='+',
-           help='List of Volume IDs to delete.')
+           help='List of Volume IDs to delete. Use \'ALL\' '
+                'to specify all volumes.')
 @utils.arg('--purge',
            dest='purge',
            metavar='<True|False>',
@@ -121,8 +123,11 @@ def do_volume_show(self, args):
 def do_volume_delete(self, args):
     """ Helper method to delete volumes on a SolidFire Cluster.
     """
-    for v in args.volume:
-        self.volumes.delete(v, args.purge)
+    if 'ALL' in args.volumes:
+        self.volumes.delete_all(args.purge)
+    else:
+        for v in args.volumes:
+            self.volumes.delete(v, args.purge)
 
 
 @utils.arg('start',
@@ -199,8 +204,9 @@ def do_account_list(self, args):
     """ List accounts on a cluster."""
 
     accounts = self.accounts.list()
-    key_list = [k for k, v in six.iteritems(accounts[0])]
-    utils.print_list(accounts, key_list)
+    if accounts:
+        key_list = [k for k, v in six.iteritems(accounts[0])]
+        utils.print_list(accounts, key_list)
 
 
 @utils.arg('name',

@@ -173,11 +173,11 @@ class Volume(sfapi.SolidFireAPI):
         """
         vlist = self.list()
         for v in vlist:
-            self.sfapi.delete(v.volumeID)
+            self.sfapi.delete_volume(v['volumeID'])
         if purge:
             dlist = self.sfapi.list_deleted()
             for v in dlist:
-                self.sfapi.purge_deleted_volume(v.volumeID)
+                self.sfapi.purge_deleted_volume(v['volumeID'])
 
     def create(self, size, account_id, **kwargs):
         """
