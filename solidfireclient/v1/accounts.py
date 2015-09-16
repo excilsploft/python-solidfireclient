@@ -57,7 +57,8 @@ class Account(sfapi.SolidFireAPI):
 
         """
         try:
-            response = self.sfapi.add_account()
+            response = self.sfapi.add_account(username, initiator_secret,
+                                              target_secret, attributes)
         except sfapi.SolidFireRequestException as ex:
             LOG.error(ex.msg[1]['error']['message'])
             raise ex

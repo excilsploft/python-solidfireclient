@@ -227,8 +227,10 @@ def do_account_list(self, args):
            help='Attributes to assign to account.')
 def do_account_create(self, args):
     """ Create a new account on the SolidFire cluster."""
-    account_id = self.accounts.create(args.name)
-    self.do_account_get(account_id)
+    account_id = self.accounts.create(args.name, args.initiator_secret,
+                                      args.target_secret, args.attributes)
+    account = self.accounts.get(account_id)
+    utils.print_dict(account)
 
 
 def do_account_attributes(self, args):

@@ -238,7 +238,7 @@ class Volume(sfapi.SolidFireAPI):
 
         vlist = []
         for id in volid_list:
-            vlist.append(self.show(id))
+            vlist.append(self.get(id))
         return vlist
 
     def clone_volume(self, source_volid, name=None,
