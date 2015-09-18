@@ -104,7 +104,7 @@ def do_volume_clone(self, args):
 @utils.arg('volume', metavar='<volume>', help='Volume ID.')
 def do_volume_show(self, args):
     """Shows volume details."""
-    vol = self.volumes.show(args.volume)
+    vol = self.volumes.get(args.volume)
     utils.print_dict(vol)
 
 
@@ -244,7 +244,7 @@ def do_account_attributes(self, args):
            metavar='<account-id>',
            default=None,
            help='ID of the account to retrieve.')
-def do_account_get(self, args):
+def do_account_show(self, args):
     """ Get solidfire account by ID."""
     account = self.accounts.get(args.acctid)
     utils.print_dict(account)
@@ -254,7 +254,7 @@ def do_account_get(self, args):
            metavar='<name>',
            default=None,
            help='Name of the account to retrieve.')
-def do_account_get_by_name(self, args):
+def do_account_show_by_name(self, args):
     """ Get SolidFire account by name."""
     account = self.accounts.get_by_name(args.name)
     utils.print_dict(account)

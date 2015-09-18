@@ -180,7 +180,7 @@ class SolidFireShell(object):
 
         if not args.sf_login:
             raise exc.CommandError("You must provide a username via"
-                                   " either --sf-login or env[SF_LOGIN]")
+                                   " either --sf-login or env[SF_USERNAME]")
 
         if not args.sf_password:
             raise exc.CommandError("You must provide a password via"
