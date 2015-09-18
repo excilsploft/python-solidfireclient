@@ -102,9 +102,20 @@ def do_volume_clone(self, args):
 
 
 @utils.arg('volume', metavar='<volume>', help='Volume ID.')
+@utils.arg('--curve',
+           dest='curve',
+           metavar='<True|False>',
+           nargs='?',
+           type=bool,
+           default=False,
+           help='Display QoS curve values.')
 def do_volume_show(self, args):
     """Shows volume details."""
     vol = self.volumes.get(args.volume)
+    qos = vol['qos']
+    curve = qos.pop('curve', None)
+    if args.curve:
+        vol['qos_curve'] = curve
     utils.print_dict(vol)
 
 
