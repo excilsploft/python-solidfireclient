@@ -16,16 +16,13 @@ class SolidFireRequestException(Exception):
 
 
 class SolidFireAPI(object):
-
-    # def __init__(self, *args, **kwargs):
-    #     super(Volume, self).__init__(*args, **kwargs)
     """The API for controlling a SolidFire cluster."""
     def __init__(self, *args, **kwargs):
         self.endpoint_dict = kwargs.get('endpoint_dict')
-        self.endpoint_version = kwargs.get('endpoint_version', '7.0')
         self.raw = True
+        self.request_history = []
 
-    def _send_request(self, method, params, endpoint=None):
+    def send_request(self, method, params, version='1.0', endpoint=None):
         if params is None:
             params = {}
 
@@ -35,7 +32,7 @@ class SolidFireAPI(object):
             endpoint_dict = self.endpoint_dict
         payload = {'method': method, 'params': params}
 
-        url = '%s/json-rpc/%s/' % (endpoint_dict['url'], self.endpoint_version)
+        url = '%s/json-rpc/%s/' % (endpoint_dict['url'], version)
 
         LOG.debug('Issue SolidFire API call: %s' % json.dumps(payload))
 
@@ -44,7 +41,7 @@ class SolidFireAPI(object):
             req = requests.post(url,
                                 data=json.dumps(payload),
                                 auth=(endpoint_dict['login'],
-                                      endpoint_dict['passwd']),
+                                      endpoint_dict['password']),
                                 verify=False,
                                 timeout=30)
         response = req.json()
@@ -91,19 +88,19 @@ class SolidFireAPI(object):
             params["snapshotID"] = snapshot_id
         if attributes is not None:
             params["attributes"] = attributes
-        return self._send_request('CloneVolume', params)
+        return self.send_request('CloneVolume', params)
 
     def copy_volume(self, volume_id, dst_volume_id, snapshot_id=None):
         """Copies one volume to another."""
         params = {"volumeID": volume_id, "dstVolumeID": dst_volume_id}
         if snapshot_id is not None:
             params["snapshotID"] = snapshot_id
-        return self._send_request('CopyVolume', params)
+        return self.send_request('CopyVolume', params)
 
     def cancel_clone(self, clone_id):
         """Cancels a currently running clone operation."""
         params = {"cloneID": clone_id}
-        return self._send_request('CancelClone', params)
+        return self.send_request('CancelClone', params)
 
     def create_volume(self, name, account_id, total_size,
                       enable512e=None, qos=None, attributes=None):
@@ -121,7 +118,7 @@ class SolidFireAPI(object):
             params["qos"] = qos
         if attributes is not None:
             params["attributes"] = attributes
-        return self._send_request('CreateVolume', params)
+        return self.send_request('CreateVolume', params)['volumeID']
 
     def delete_volume(self, volume_id):
         """DeleteVolume marks an active volume for deletion.
@@ -153,7 +150,7 @@ class SolidFireAPI(object):
         unavailable."""
 
         params = {"volumeID": volume_id}
-        return self._send_request('DeleteVolume', params)
+        return self.send_request('DeleteVolume', params)
 
     def get_volume_stats(self, volume_id):
         """Retrieves high-level activity measurements for a single volume.
@@ -161,7 +158,7 @@ class SolidFireAPI(object):
         Values are cumulative from the creation of the volume."""
 
         params = {"volumeID": volume_id}
-        return self._send_request(
+        return self.send_request(
             'GetVolumeStats',
             params)
 
@@ -171,13 +168,13 @@ class SolidFireAPI(object):
             params["startVolumeID"] = start_volume_id
         if limit is not None:
             params["limit"] = limit
-        return self._send_request(
+        return self.send_request(
             'ListActiveVolumes',
             params)['volumes']
 
     def list_deleted_volumes(self):
         params = {}
-        return self._send_request(
+        return self.send_request(
             'ListDeletedVolumes',
             params)['volumes']
 
@@ -194,7 +191,7 @@ class SolidFireAPI(object):
             params["accounts"] = accounts
         if is_paired is not None:
             params["isPaired"] = is_paired
-        return self._send_request('ListVolumes', params)['volumes']
+        return self.send_request('ListVolumes', params)['volumes']
 
     def list_volumes_for_account(self, account_id,
                                  start_volume_id=None, limit=None):
@@ -203,7 +200,7 @@ class SolidFireAPI(object):
             params["startVolumeID"] = start_volume_id
         if limit is not None:
             params["limit"] = limit
-        return self._send_request(
+        return self.send_request(
             'ListVolumesForAccount',
             params)['volumes']
 
@@ -238,7 +235,7 @@ class SolidFireAPI(object):
             params["totalSize"] = total_size
         if attributes is not None:
             params["attributes"] = attributes
-        return self._send_request('ModifyVolume', params)
+        return self.send_request('ModifyVolume', params)
 
     def purge_deleted_volume(self, volume_id):
         """PurgeDeletedVolume immediately and permanently purges a volume.
@@ -248,7 +245,7 @@ class SolidFireAPI(object):
         this method is not typically required."""
 
         params = {"volumeID": volume_id}
-        return self._send_request(
+        return self.send_request(
             'PurgeDeletedVolume',
             params)
 
@@ -267,20 +264,20 @@ class SolidFireAPI(object):
             params["targetSecret"] = target_secret
         if attributes is not None:
             params["attributes"] = attributes
-        return self._send_request('AddAccount', params)
+        return self.send_request('AddAccount', params)
 
     def get_account_by_id(self, account_id):
         """Get account information, given the ID."""
         params = {"accountID": account_id}
-        return self._send_request('GetAccountByID', params)
+        return self.send_request('GetAccountByID', params)
 
     def get_account_by_name(self, username):
         """Get account information, given the ID."""
         params = {"username": username}
-        return self._send_request('GetAccountByName', params)
+        return self.send_request('GetAccountByName', params)
 
     def get_account_efficiency(self, account_id):
-        return self._send_request('GetAccountEfficiency', {})
+        return self.send_request('GetAccountEfficiency', {})
 
     def list_accounts(self, start_account_id=None, limit=None):
         """Returns list of accounts, with optional paging support."""
@@ -289,7 +286,7 @@ class SolidFireAPI(object):
             params["startAccountID"] = start_account_id
         if limit is not None:
             params["limit"] = limit
-        return self._send_request('ListAccounts', params)['accounts']
+        return self.send_request('ListAccounts', params)['accounts']
 
     def modify_account(self, account_id, status=None,
                        initiator_secret=None, target_secret=None,
@@ -307,7 +304,7 @@ class SolidFireAPI(object):
             params['target_secret'] = target_secret
         if attributes:
             params['attributes'] = attributes
-        return self._send_request('ModifyAccount', params)
+        return self.send_request('ModifyAccount', params)
 
     def remove_account(self, account_id):
         """Remove an account from the system.
@@ -317,7 +314,7 @@ class SolidFireAPI(object):
         PurgeVolume purge deleted volumes."""
 
         params = {"accountID": account_id}
-        return self._send_request('RemoveAccount', params)
+        return self.send_request('RemoveAccount', params)
 
     # ### Cluster admin operations  ####
     def get_cluster_capacity(self):
@@ -327,14 +324,14 @@ class SolidFireAPI(object):
         efficiency rates that are displayed in the Element User Interface."""
 
         params = {}
-        return self._send_request(
+        return self.send_request(
             'GetClusterCapacity',
             params)
 
     def get_cluster_info(self):
         """Return configuration information about the cluster."""
         params = {}
-        return self._send_request(
+        return self.send_request(
             'GetClusterInfo',
             params)
 
@@ -344,19 +341,19 @@ class SolidFireAPI(object):
         Information about the nodes that are currently in the process of
         upgrading software is also returned."""
         params = {}
-        return self._send_request(
+        return self.send_request(
             'GetClusterVersionInfo',
             params)
 
     def get_limits(self):
         """Retrieves the limit values set by the API"""
         params = {}
-        return self._send_request('GetLimits', params)
+        return self.send_request('GetLimits', params)
 
     def list_services(self):
         """List the services in the cluster."""
         params = {}
-        return self._send_request('ListServices', params)
+        return self.send_request('ListServices', params)
 
     def get_async_result(self, async_handle):
         """Used to retrieve the result of asynchronous method calls.
@@ -375,7 +372,7 @@ class SolidFireAPI(object):
         attempts returns an error."""
 
         params = {"asyncHandle": async_handle}
-        return self._send_request(
+        return self.send_request(
             'GetAsyncResult',
             params)
 
@@ -396,7 +393,7 @@ class SolidFireAPI(object):
             params["name"] = name
         if attributes is not None:
             params["attributes"] = attributes
-        return self._send_request(
+        return self.send_request(
             'CreateSnapshot',
             params)
 
@@ -409,7 +406,7 @@ class SolidFireAPI(object):
         use RollbackToSnapshot."""
 
         params = {"snapshotID": snapshot_id}
-        return self._send_request(
+        return self.send_request(
             'DeleteSnapshot',
             params)
 
@@ -419,17 +416,17 @@ class SolidFireAPI(object):
         params = {}
         if volume_id is not None:
             params["volumeID"] = volume_id
-        return self._send_request('ListSnapshots', params)['snapshots']
+        return self.send_request('ListSnapshots', params)['snapshots']
 
     def list_active_nodes(self):
         params = {}
-        return self._send_request(
+        return self.send_request(
             'ListActiveNodes',
             params)
 
     def list_all_nodes(self):
         params = {}
-        return self._send_request('ListAllNodes', params)
+        return self.send_request('ListAllNodes', params)
 
     def list_pending_nodes(self):
         """Gets the list of pending nodes.
@@ -438,7 +435,7 @@ class SolidFireAPI(object):
         but have not been added via the AddNodes method."""
 
         params = {}
-        return self._send_request(
+        return self.send_request(
             'ListPendingNodes',
             params)
 
@@ -460,7 +457,7 @@ class SolidFireAPI(object):
             params["volumes"] = volumes
         if attributes is not None:
             params["attributes"] = attributes
-        return self._send_request(
+        return self.send_request(
             'CreateVolumeAccessGroup',
             params)
 
@@ -473,14 +470,14 @@ class SolidFireAPI(object):
             params["startVolumeAccessGroupID"] = start_volume_access_group_id
         if limit is not None:
             params["limit"] = limit
-        return self._send_request(
+        return self.send_request(
             'ListVolumeAccessGroups',
             params)
 
     def delete_volume_access_group(self, volume_access_group_id):
         """Delete a volume access group from the system."""
         params = {"volumeAccessGroupID": volume_access_group_id}
-        return self._send_request(
+        return self.send_request(
             'DeleteVolumeAccessGroup',
             params)
 
@@ -511,7 +508,7 @@ class SolidFireAPI(object):
             params["volumes"] = volumes
         if attributes is not None:
             params["attributes"] = attributes
-        return self._send_request(
+        return self.send_request(
             'ModifyVolumeAccessGroup',
             params)
 
@@ -522,7 +519,7 @@ class SolidFireAPI(object):
         params = {
             "volumeAccessGroupID": volume_access_group_id,
             "initiators": initiators}
-        return self._send_request(
+        return self.send_request(
             'AddInitiatorsToVolumeAccessGroup',
             params)
 
@@ -533,7 +530,7 @@ class SolidFireAPI(object):
         params = {
             "volumeAccessGroupID": volume_access_group_id,
             "initiators": initiators}
-        return self._send_request(
+        return self.send_request(
             'RemoveInitiatorsFromVolumeAccessGroup',
             params)
 
@@ -545,7 +542,7 @@ class SolidFireAPI(object):
         params = {
             "volumeAccessGroupID": volume_access_group_id,
             "volumes": volumes}
-        return self._send_request(
+        return self.send_request(
             'AddVolumesToVolumeAccessGroup',
             params)
 
@@ -557,7 +554,7 @@ class SolidFireAPI(object):
         params = {
             "volumeAccessGroupID": volume_access_group_id,
             "volumes": volumes}
-        return self._send_request(
+        return self.send_request(
             'RemoveVolumesFromVolumeAccessGroup',
             params)
 
@@ -566,41 +563,41 @@ class SolidFireAPI(object):
         params = {"path": path}
         if data is not None:
             params["data"] = data
-        return self._send_request(
+        return self.send_request(
             'CreateDatabaseEntry',
             params)
 
     def delete_database_entry(self, path, data_version):
         """Deletes an existing database entry"""
         params = {"path": path, "dataVersion": data_version}
-        return self._send_request(
+        return self.send_request(
             'DeleteDatabaseEntry',
             params)
 
     def get_database_entry(self, path):
         """Gets an entry from the database"""
         params = {"path": path}
-        return self._send_request(
+        return self.send_request(
             'GetDatabaseEntry',
             params)
 
     def set_database_entry(self, path, data_version, data):
         """Sets the contents of an existing database entry"""
         params = {"path": path, "dataVersion": data_version, "data": data}
-        return self._send_request(
+        return self.send_request(
             'SetDatabaseEntry',
             params)
 
     def list_database_children(self, path):
         """Returns a list of the names of the children for a database path"""
         params = {"path": path}
-        return self._send_request(
+        return self.send_request(
             'ListDatabaseChildren',
             params)
 
     def list_database_children_data(self, path):
         """Returns the data for all children in a database path"""
         params = {"path": path}
-        return self._send_request(
+        return self.send_request(
             'ListDatabaseChildrenData',
             params)
