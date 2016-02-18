@@ -27,9 +27,17 @@ These modules are still in early development and while available in
 private git repo, they are not currently being published to PyPI
 (hopefully they will be).
 
-Best way to install is to clone the repository and use pip:
+Best way to install is from source and using venv:
 
-> pip install -e \<path-to-local-repository\>
+1. `git clone https://github.com/j-griffith/python-solidfireclient`
+2. `cd python-solidfireclient`
+3. `git checkout simplified_using_click`
+4. `virtualenv venv`
+5. `source venv/bin/activate`
+6. `pip install -e .`
+7.  Modify `sfvars.env` appropriately
+8. `source sfvars.env`
+9. `sfcli
 
 Command-Line Usage
 ------------------
