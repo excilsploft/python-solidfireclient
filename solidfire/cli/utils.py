@@ -32,7 +32,7 @@ def print_list(objs, fields, formatters={}, order_by=None):
                 # The QoS attribute is ridiculously long with the curve
                 # data, which frankly isn't that useful for an end user, so
                 # let's pop it off of the object here for display
-                getattr(o, field).pop('curve', None)
+                o['qos'].pop('curve', None)
             if field in formatters:
                 row.append(formatters[field](o))
             else:

@@ -54,8 +54,8 @@ def _get_volume(ctx, volume_id):
 def list(ctx, accounts=None, deleted=True):
     """List Volumes."""
     volumes = _list_volumes(ctx, accounts, deleted)
-    key_list = ['volumeID', 'status', 'totalSize',
-                'accountID', 'snapshotID', 'name']
+    key_list = ['volumeID', 'iqn', 'enable512e',
+                'qos', 'totalSize']
     cli_utils.print_list(volumes, key_list)
 
 
@@ -151,6 +151,7 @@ def create(ctx, size, account_id, name,
         for k, v in qos.iteritems():
             qos[k] = int(v)
     if attributes:
+        import pdb;pdb.set_trace()
         attributes = utils.kv_string_to_dict(attributes)
 
     vname = name
@@ -228,3 +229,24 @@ def clone(ctx, volume_id, name, from_snapshot,
 def stats(ctx, volume_id):
     stats_info = ctx.sfapi.get_volume_stats(volume_id)['volumeStats']
     cli_utils.print_dict(stats_info)
+
+
+@cli.command('uuids', short_help='List mismatched UUIDs.')
+@click.option('--accounts',
+              default=None,
+              help='List only for the specified list of account ID\'s.')
+@pass_context
+def uuids(ctx, accounts=None):
+    """List Volumes."""
+    volumes = _list_volumes(ctx, accounts, False)
+    mismatched = []
+    for v in volumes:
+        if v['attributes']:
+            meta_uuid = v['attributes'].get('uuid', {})
+            if meta_uuid and meta_uuid not in v['name']:
+                mismatched.append({'ID': v['volumeID'],
+                                   'Name': v['name'],
+                                   'Attributes-UUID': meta_uuid})
+
+    key_list = ['ID', 'Name', 'Attributes-UUID']
+    cli_utils.print_list(mismatched, key_list)

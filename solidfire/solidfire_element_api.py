@@ -116,8 +116,7 @@ class SolidFireAPI(object):
             params["enable512e"] = enable512e
         if qos is not None:
             params["qos"] = qos
-        if attributes is not None:
-            params["attributes"] = attributes
+        params['attributes'] = attributes
         return self.send_request('CreateVolume', params)['volumeID']
 
     def delete_volume(self, volume_id):
