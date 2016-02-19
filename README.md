@@ -31,13 +31,12 @@ Best way to install is from source and using venv:
 
 1. `git clone https://github.com/j-griffith/python-solidfireclient`
 2. `cd python-solidfireclient`
-3. `git checkout simplified_using_click`
-4. `virtualenv venv`
-5. `source venv/bin/activate`
-6. `pip install -e .`
-7.  Modify `sfvars.env` appropriately
-8. `source sfvars.env`
-9. `sfcli
+3. `virtualenv venv`
+4. `source venv/bin/activate`
+5. `pip install -e .`
+6.  Modify `sfvars.env` appropriately
+7. `source sfvars.env`
+8. `sfcli
 
 Command-Line Usage
 ------------------
