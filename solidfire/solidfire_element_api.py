@@ -19,10 +19,11 @@ class SolidFireAPI(object):
     """The API for controlling a SolidFire cluster."""
     def __init__(self, *args, **kwargs):
         self.endpoint_dict = kwargs.get('endpoint_dict')
+        self.api_version = kwargs.get('api_version')
         self.raw = True
         self.request_history = []
 
-    def send_request(self, method, params, version='1.0', endpoint=None):
+    def send_request(self, method, params, endpoint=None):
         if params is None:
             params = {}
 
@@ -32,7 +33,7 @@ class SolidFireAPI(object):
             endpoint_dict = self.endpoint_dict
         payload = {'method': method, 'params': params}
 
-        url = '%s/json-rpc/%s/' % (endpoint_dict['url'], version)
+        url = '%s/json-rpc/%s/' % (endpoint_dict['url'], self.api_version)
 
         LOG.debug('Issue SolidFire API call: %s' % json.dumps(payload))
 
